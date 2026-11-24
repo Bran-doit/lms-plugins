@@ -3,7 +3,7 @@
   <name>LyricTranslator</name>
   <title lang="EN">Lyric-Translator</title>
   <title lang="DE">Lyric-Translator</title>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <defaultState>enabled</defaultState>
   <creator>Lyric-Translator</creator>
   <module>Plugins::LyricTranslator::Plugin</module>

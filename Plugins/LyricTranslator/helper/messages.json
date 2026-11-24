@@ -1,4 +1,10 @@
 {
+  "available": {"de":"Eingerichtete Ausgangssprachen","en":"Installed source languages"},
+  "none": {"de":"Noch keine","en":"None yet"},
+  "auto_download": {"de":"Fehlende Sprachmodelle automatisch herunterladen","en":"Automatically download missing language models"},
+  "auto_download_help": {"de":"Bei Bedarf werden unterstützte Sprachmodelle im Hintergrund ergänzt. Das benötigt Internet und Speicherplatz. Die Übersetzung danach erneut abrufen; der Originaltext bleibt abrufbar. Bei automatischer Erkennung muss die Laufzeit einmal eingerichtet sein.","en":"Supported models are added in the background when needed. This requires internet and disk space. Request the translation again afterwards; original lyrics remain available. Automatic detection requires initial runtime setup."},
+  "model_downloading": {"de":"Sprachmodelle werden im Hintergrund eingerichtet oder sind dafür vorgemerkt. Bitte die Übersetzung in etwa einer Minute erneut abrufen.","en":"Language models are being set up in the background or queued for setup. Please request the translation again in about a minute."},
+  "invalid_mode": {"de":"Ungültiger Lyrics-Modus. Erlaubt sind original und translated.","en":"Invalid lyrics mode. Use original or translated."},
   "intro": {"de":"Liedtexte lokal auf deinem LMS-Server übersetzen – ohne API-Schlüssel oder Übersetzungsgebühren.","en":"Translate lyrics locally on your LMS server – no API key or translation fees."},
   "languages": {"de":"Sprachen","en":"Languages"},
   "source": {"de":"Ausgangssprache des Liedtexts","en":"Original lyrics language"},

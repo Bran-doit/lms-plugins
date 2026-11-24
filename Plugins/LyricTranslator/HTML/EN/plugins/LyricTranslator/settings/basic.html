@@ -1,7 +1,13 @@
 [% PROCESS settings/header.html %]
-<div class="settingGroup" lang="[% lt_language | html %]">
+<style>
+ #lyrictranslator-settings > h2 { padding-bottom: 1em; }
+ #lyrictranslator-settings > .lt-intro { padding-bottom: 1em; }
+ #lyrictranslator-settings > .settingSubGroup + .settingSubGroup { padding-top: 1em; }
+ #lyrictranslator-settings .lt-detected { padding-top: 1em; }
+</style>
+<div id="lyrictranslator-settings" class="settingGroup" lang="[% lt_language | html %]">
  <h2>Lyric-Translator</h2>
- <p>[% lt_labels.intro | html %]</p>
+ <p class="lt-intro">[% lt_labels.intro | html %]</p>
  [% IF lt_error %]<p class="warning">[% lt_error | html %]</p>[% END %]
  <div class="settingSubGroup">
   <h3>[% lt_labels.languages | html %]</h3>
@@ -17,12 +23,17 @@
    </select>
   </p>
   <p>[% lt_labels.language_help | html %]</p>
-  [% IF lt.detected_name %]<p>[% lt_labels.detected | html %]: [% lt.detected_name | html %]</p>[% END %]
+  [% IF lt.detected_name %]<p class="lt-detected">[% lt_labels.detected | html %]: [% lt.detected_name | html %]</p>[% END %]
  </div>
  <div class="settingSubGroup">
   <h3>[% lt_labels.local | html %]</h3>
   <p>[% lt_labels.direction | html %]: [% lt.source_name | html %] &rarr; [% lt.target_name | html %]</p>
   <p role="status">[% lt.message | html %]</p>
+  <p>[% lt_labels.available | html %] &rarr; [% lt.target_name | html %]:
+   [% IF lt.available_sources.size %][% FOREACH item = lt.available_sources %][% item.name | html %][% UNLESS loop.last %], [% END %][% END %][% ELSE %][% lt_labels.none | html %][% END %]
+  </p>
+  <p><label><input type="checkbox" name="pref_autoDownload" value="1"[% IF prefs.autoDownload %] checked="checked"[% END %]> [% lt_labels.auto_download | html %]</label></p>
+  <p>[% lt_labels.auto_download_help | html %]</p>
   [% IF !lt.supported %]
    <p>[% lt_labels.windows | html %]</p>
   [% ELSIF lt.state == 'running' %]

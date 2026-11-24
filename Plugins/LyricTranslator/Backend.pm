@@ -16,6 +16,7 @@ use Plugins::LyricTranslator::I18N qw(loc pair route catalog languageName);
 
 my ($setup, $setupStarted, $active);
 my (@queue, %pending);
+my (@downloads, %downloadAttempt);
 my $sequence = 0;
 sub root { File::Spec->catdir(scalar Slim::Utils::OSDetect::dirsFor('prefs'), 'LyricTranslator') }
 sub helper { File::Spec->rel2abs(File::Spec->catfile(dirname(__FILE__), 'helper', @_)) }
@@ -77,10 +78,14 @@ sub status {
     $state->{supported} = $^O eq 'MSWin32' ? 1 : 0;
     $state->{folder} = root();
     $state->{busy} = $active ? 1 : 0;
+    $state->{auto_download}=preferences('plugin.lyrictranslator')->get('autoDownload') ? 1 : 0;
+    $state->{available_sources}=[map {{code=>$_,name=>languageName($_)}} grep {
+        my $s=$_; $s ne $target && -f path('runtime','python.exe') && !(grep {!modelReady($_)} @{route($s,$target)})
+    } sort keys %{catalog()->{languages}}];
     return $state;
 }
 sub startSetup {
-    my ($source,$target)=pair(); route($source,$target);
+    my ($source,$target)=@_; ($source,$target)=pair() unless defined $source; route($source,$target);
     die loc('windows') unless $^O eq 'MSWin32';
     return if $setup && $setup->alive;
     die loc('busy') if $active || @queue;
@@ -106,6 +111,23 @@ sub pollSetup {
         writeJSON(path('setup-status.json'), {state=>'error',code=>'setup_timeout'});
     }
     $setup->wait; undef $setup;
+    startNext();
+}
+sub requestDownload {
+    my ($source,$target)=@_;
+    return unless preferences('plugin.lyrictranslator')->get('autoDownload');
+    return unless $source && $source ne 'auto' && $source ne $target;
+    return unless eval {route($source,$target);1};
+    my $key="$source-$target";
+    return 1 if grep {$_->[0] eq $source && $_->[1] eq $target} @downloads;
+    return if $downloadAttempt{$key} && time()-$downloadAttempt{$key}<600;
+    return if @downloads>=8;
+    $downloadAttempt{$key}=time();
+    push @downloads,[$source,$target];
+    return 1;
+}
+sub downloadResult {
+    return {state=>'error',error_code=>'model_downloading',error=>loc('model_downloading'),retry_after=>60};
 }
 sub setLanguages {
     my ($source,$target)=@_;
@@ -127,7 +149,9 @@ sub translate {
         return $callback->({state=>'error', error=>loc('invalid_text')});
     }
     my $state = status($source,$target);
+    return $callback->(downloadResult()) if $state->{state} eq 'running';
     unless (($source eq 'auto' ? $state->{runtime_ready} : $state->{ready}) && $state->{state} ne 'running') {
+        if (requestDownload($source,$target)) { startNext(); return $callback->(downloadResult()); }
         return $callback->({state=>'error', error=>loc('need_setup')});
     }
     my $key = sha1_hex(encode('UTF-8',join("\0",$source,$target,$text)));
@@ -139,6 +163,12 @@ sub translate {
     startNext();
 }
 sub startNext {
+    return if $setup && $setup->alive;
+    if (!$active && !@queue && @downloads) {
+        my $pair=shift @downloads;
+        eval {startSetup(@$pair);1} or writeJSON(path('setup-status.json'),{state=>'error',code=>'setup_error',detail=>"$@"});
+        return;
+    }
     return if $active || !@queue;
     $active = shift @queue;
     my $id = join('-', time(), $$, ++$sequence);
@@ -184,6 +214,9 @@ sub finish {
         $result->{error}=loc('need_setup').' ('.languageName($result->{source}).' → '.languageName($result->{target}).')';
     }
     undef $active;
+    if (($result->{error_code}||'') eq 'need_setup' && requestDownload($result->{source},$result->{target})) {
+        $result={%$result,%{downloadResult()}};
+    }
     delete $pending{$job->{key}};
     unlink grep {defined && -f} ($job->{input}, $job->{output});
     for my $callback (@{$job->{callbacks}}) { eval { $callback->($result) }; }
@@ -193,6 +226,6 @@ sub shutdown {
     Slim::Utils::Timers::killTimers(__PACKAGE__);
     $setup->die if $setup && $setup->alive;
     $active->{process}->die if $active && $active->{process} && $active->{process}->alive;
-    @queue = (); %pending = (); undef $active; undef $setup;
+    @queue = (); @downloads=(); %downloadAttempt=(); %pending = (); undef $active; undef $setup;
 }
 1;

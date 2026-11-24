@@ -8,7 +8,7 @@ use Plugins::LyricTranslator::Backend;
 use Plugins::LyricTranslator::I18N qw(labels language languageName catalog pair);
 sub name { Slim::Web::HTTP::CSRF->protectName('PLUGIN_LYRICTRANSLATOR') }
 sub page { Slim::Web::HTTP::CSRF->protectURI('plugins/LyricTranslator/settings/basic.html') }
-sub prefs { return (preferences('plugin.lyrictranslator'),qw(showOriginal)); }
+sub prefs { return (preferences('plugin.lyrictranslator'),qw(showOriginal autoDownload)); }
 sub handler {
     my ($class,$client,$params)=@_;
     if ($params->{saveSettings}) {

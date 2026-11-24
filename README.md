@@ -18,7 +18,7 @@ Radiosender aus Radio Browser nach Land und Region durchsuchen. Eigene Radio-Fav
 
 ### Lyric-Translator
 
-Lokale Liedtextübersetzung in acht Sprachen. Benötigt **Windows x64**, **LMS 8.x/9.x** und das aktive Plugin **Music and Artist Information**. Details: [Plugin-Anleitung](Plugins/LyricTranslator/README.txt).
+Lokale Liedtextübersetzung in acht Sprachen mit automatischer Spracherkennung, Übersicht eingerichteter Sprachen und optionalem automatischem Modelldownload. Clients können auch Original-Lyrics abrufen. Benötigt **Windows x64**, **LMS 8.x/9.x** und das aktive Plugin **Music and Artist Information**. [Anleitung](Plugins/LyricTranslator/README.txt) · [Client-API](Plugins/LyricTranslator/CLIENT-API.md) · [Änderungsverlauf](Plugins/LyricTranslator/CHANGELOG.md).
 
 ## Updates veröffentlichen
 

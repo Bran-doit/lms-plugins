@@ -13,13 +13,13 @@ use Time::HiRes qw(time);
 use Plugins::LyricTranslator::Backend;
 use Plugins::LyricTranslator::I18N qw(loc pair route catalog languageName);
 
-our $VERSION = '0.2.0';
+our $VERSION = '0.3.0';
 my $prefs = preferences('plugin.lyrictranslator');
 sub getDisplayName { 'PLUGIN_LYRICTRANSLATOR' }
 sub initPlugin {
     my $class = shift;
     $class->SUPER::initPlugin(@_);
-    $prefs->init({showOriginal=>1,sourceLanguage=>'en',targetLanguage=>'de'});
+    $prefs->init({showOriginal=>1,autoDownload=>1,sourceLanguage=>'en',targetLanguage=>'de'});
     Slim::Control::Request::addDispatch(['lyrictranslator','lyrics'],[0,1,1,\&lyricsQuery]);
     Slim::Control::Request::addDispatch(['lyrictranslator','status'],[0,1,0,\&statusQuery]);
     Slim::Control::Request::addDispatch(['lyrictranslator','languages'],[0,1,0,\&languagesQuery]);
@@ -65,13 +65,17 @@ sub trackInfo {
     my ($source,$target)=pair();
     return {name=>loc('menu',languageName($source),languageName($target)),type=>'link',url=>\&menuLyrics,passthrough=>[\%args]};
 }
-sub fetchTranslated {
+sub fetchLyrics {
     my ($client,$args,$callback) = @_;
+    my $mode=defined($args->{mode}) ? $args->{mode} : 'translated';
+    return $callback->({state=>'error',error=>loc('invalid_mode'),error_code=>'invalid_mode'}) unless $mode eq 'translated' || $mode eq 'original';
     my ($source,$target)=pair();
     $source=$args->{source} if defined $args->{source};
     $target=$args->{target} if defined $args->{target};
-    eval {route($source,$target);1} or return $callback->({state=>'error',error=>"$@"});
-    my @command = ('musicartistinfo','lyrics','timestamps:1');
+    if ($mode eq 'translated') {
+        eval {route($source,$target);1} or return $callback->({state=>'error',error=>"$@"});
+    }
+    my @command = ('musicartistinfo','lyrics',($mode eq 'original' && !$args->{timestamps}) ? 'timestamps:0' : 'timestamps:1');
     for my $key (qw(track_id title artist album url duration)) {
         push @command, "$key:$args->{$key}" if defined($args->{$key}) && length($args->{$key});
     }
@@ -92,9 +96,12 @@ sub fetchTranslated {
         return $finish->({state=>'error',error=>$error || loc('no_lyrics')}) if $error || !defined($original) || $original !~ /\S/;
         my $title = $request->getResult('title') || $args->{title} || '';
         my $artist = $request->getResult('artist') || $args->{artist} || '';
+        if ($mode eq 'original') {
+            return $finish->({state=>'ok',mode=>'original',lyrics=>$original,plain=>$original,original=>$original,title=>$title,artist=>$artist,unchanged=>1});
+        }
         Plugins::LyricTranslator::Backend::translate($original, sub {
             my ($result)=@_;
-            $finish->({%$result, original=>$original, title=>$title, artist=>$artist});
+            $finish->({%$result, mode=>'translated',original=>$original, title=>$title, artist=>$artist});
         },{source=>$source,target=>$target});
     };
     Slim::Utils::Timers::setTimer($guard,time()+90,sub { $finish->({state=>'error',error=>loc('lookup_timeout')}); });
@@ -108,24 +115,24 @@ sub fetchTranslated {
 sub lyricsQuery {
     my ($request) = @_;
     if ($request->isNotQuery([['lyrictranslator'],['lyrics']])) { $request->setStatusBadDispatch; return; }
-    my %args = map {$_=>$request->getParam($_)} qw(track_id title artist album url duration source target);
+    my %args = map {$_=>$request->getParam($_)} qw(track_id title artist album url duration source target mode timestamps);
     $request->setStatusProcessing;
-    fetchTranslated($request->client,\%args,sub {
+    fetchLyrics($request->client,\%args,sub {
         my ($result)=@_;
         if (($result->{state}||'') eq 'ok') {
             $request->addResult('lyrics',$request->getParam('timestamps') ? $result->{lyrics} : $result->{plain});
-            $request->addResult($_,$result->{$_}) for qw(original title artist source target cached via detected confidence unchanged);
+            $request->addResult($_,$result->{$_}) for grep {defined $result->{$_}} qw(original title artist source target cached via detected confidence unchanged mode);
             $request->addResult('translated',$result->{unchanged} ? 0 : 1);
         } else {
             $request->addResult('error',$result->{error} || loc('translation_error'));
-            $request->addResult($_,$result->{$_}) for grep {defined $result->{$_}} qw(error_code source target detected confidence);
+            $request->addResult($_,$result->{$_}) for grep {defined $result->{$_}} qw(error_code source target detected confidence retry_after);
         }
         $request->setStatusDone;
     });
 }
 sub menuLyrics {
     my ($client,$cb,$params,$args) = @_;
-    fetchTranslated($client,$args || {},sub {
+    fetchLyrics($client,$args || {},sub {
         my ($result)=@_;
         my $text = $result->{error} || '';
         if (($result->{state}||'') eq 'ok') {
