@@ -1,0 +1,244 @@
+{
+  "version": "0.2.0",
+  "model": {
+    "url": "https://argos-net.com/v1/translate-en_de-1_0.argosmodel",
+    "sha256": "8d9cd82aedd55a37c3ad98668c7e6d6d806e353435a6d288ab541aa660d11473",
+    "name": "Argos English-German 1.0",
+    "filename": "translate-en_de-1_0.argosmodel",
+    "bytes": 87106499
+  },
+  "python": {
+    "url": "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip",
+    "sha256": "009d6bf7e3b2ddca3d784fa09f90fe54336d5b60f0e0f305c37f400bf83cfd3b",
+    "name": "CPython 3.11.9",
+    "filename": "python-3.11.9-embed-amd64.zip",
+    "bytes": 11249023
+  },
+  "wheels": [
+    {
+      "sha256": "865649cebae240fe8c5b3e868354ea6c611d2ec17f335848caf890fca6c62d71",
+      "filename": "ctranslate2-4.6.0-cp311-cp311-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/e1/85/284c30508fc3627c6adc855207fc970cb41c894acbbb3e6351f4874ac7c2/ctranslate2-4.6.0-cp311-cp311-win_amd64.whl",
+      "name": "ctranslate2",
+      "version": "4.6.0",
+      "bytes": 19466832
+    },
+    {
+      "sha256": "0993dbc665f4113017892f1b87c3904a44d0640eda510abcacdfb07f74286d36",
+      "filename": "sentencepiece-0.2.0-cp311-cp311-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/a2/f6/587c62fd21fc988555b85351f50bbde43a51524caafd63bc69240ded14fd/sentencepiece-0.2.0-cp311-cp311-win_amd64.whl",
+      "name": "sentencepiece",
+      "version": "0.2.0",
+      "bytes": 991520
+    },
+    {
+      "sha256": "e8213002e427c69c45a52bbd94163084025f533a55a59d6f9c5b820774ef3303",
+      "filename": "numpy-2.2.6-cp311-cp311-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/31/0a/f354fb7176b81747d870f7991dc763e157a934c717b67b58456bc63da3df/numpy-2.2.6-cp311-cp311-win_amd64.whl",
+      "name": "numpy",
+      "version": "2.2.6",
+      "bytes": 12907455
+    },
+    {
+      "sha256": "e10ce637b18caea04431ce14fabcf5c64a1c61ec9c56b071a4b7ca131ca52d44",
+      "filename": "PyYAML-6.0.2-cp311-cp311-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/ed/23/8da0bbe2ab9dcdd11f4f4557ccaf95c10b9811b13ecced089d43ce59c3c8/PyYAML-6.0.2-cp311-cp311-win_amd64.whl",
+      "name": "PyYAML",
+      "version": "6.0.2",
+      "bytes": 161980
+    },
+    {
+      "sha256": "c3a9c4211ff4c309edb8b8c4f1cbfa7ae324c4ba9f91ff254e3d305b9fd54561",
+      "filename": "setuptools-78.1.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/90/99/158ad0609729111163fc1f674a5a42f2605371a4cf036d0441070e2f7455/setuptools-78.1.1-py3-none-any.whl",
+      "name": "setuptools",
+      "version": "78.1.1",
+      "bytes": 1256462
+    },
+    {
+      "sha256": "c25bd038147951ba3a89efe9ec12cc7d2116cb6f311ff8af84ade398a8bc0616",
+      "url": "https://files.pythonhosted.org/packages/69/2d/0eeff2727c970b1d553be70d15ba2d84e3830696c09a79d954c5ae3d5212/py3langid-0.4.0-py3-none-any.whl",
+      "name": "py3langid",
+      "bytes": 4600605,
+      "version": "0.4.0",
+      "filename": "py3langid-0.4.0-py3-none-any.whl"
+    }
+  ],
+  "platform": "windows-x64",
+  "languages": {
+    "en": {
+      "en": "English",
+      "de": "Englisch"
+    },
+    "de": {
+      "en": "German",
+      "de": "Deutsch"
+    },
+    "es": {
+      "en": "Spanish",
+      "de": "Spanisch"
+    },
+    "fr": {
+      "en": "French",
+      "de": "Französisch"
+    },
+    "it": {
+      "en": "Italian",
+      "de": "Italienisch"
+    },
+    "pt": {
+      "en": "Portuguese",
+      "de": "Portugiesisch"
+    },
+    "nl": {
+      "en": "Dutch",
+      "de": "Niederländisch"
+    },
+    "ru": {
+      "en": "Russian",
+      "de": "Russisch"
+    }
+  },
+  "models": {
+    "nl-en": {
+      "name": "Argos nl-en",
+      "url": "https://argos-net.com/v1/translate-nl_en-1_8.argosmodel",
+      "filename": "translate-nl_en-1_8.argosmodel",
+      "sha256": "f49ac90c5812e0cb86a2858f4cfa61accec8709612728e6f805f0771c9a91e0e",
+      "bytes": 69944805,
+      "source": "nl",
+      "target": "en",
+      "version": "1.8"
+    },
+    "en-nl": {
+      "name": "Argos en-nl",
+      "url": "https://argos-net.com/v1/translate-en_nl-1_8.argosmodel",
+      "filename": "translate-en_nl-1_8.argosmodel",
+      "sha256": "91406f040619fb519e16af9c304709e9f3195297e626eec6924d62c7c981a33b",
+      "bytes": 71504559,
+      "source": "en",
+      "target": "nl",
+      "version": "1.8"
+    },
+    "en-fr": {
+      "name": "Argos en-fr",
+      "url": "https://argos-net.com/v1/translate-en_fr-1_9.argosmodel",
+      "filename": "translate-en_fr-1_9.argosmodel",
+      "sha256": "3a65ed83364f4e7b06e30f9dd823db1934899ed3ce839e63f46dc7b09dc797b4",
+      "bytes": 65472327,
+      "source": "en",
+      "target": "fr",
+      "version": "1.9"
+    },
+    "en-de": {
+      "name": "Argos en-de",
+      "url": "https://argos-net.com/v1/translate-en_de-1_0.argosmodel",
+      "filename": "translate-en_de-1_0.argosmodel",
+      "sha256": "8d9cd82aedd55a37c3ad98668c7e6d6d806e353435a6d288ab541aa660d11473",
+      "bytes": 87106499,
+      "source": "en",
+      "target": "de",
+      "version": "1.0"
+    },
+    "en-it": {
+      "name": "Argos en-it",
+      "url": "https://argos-net.com/v1/translate-en_it-1_0.argosmodel",
+      "filename": "translate-en_it-1_0.argosmodel",
+      "sha256": "dde2180001a47904ecbbd688a41e35db8a040e4fd5b52e4f29b4bb499516ab32",
+      "bytes": 87660780,
+      "source": "en",
+      "target": "it",
+      "version": "1.0"
+    },
+    "en-pt": {
+      "name": "Argos en-pt",
+      "url": "https://argos-net.com/v1/translate-en_pt-1_9.argosmodel",
+      "filename": "translate-en_pt-1_9.argosmodel",
+      "sha256": "0c5350a2fa5b923de1346edc0d42e08e38bab2e33cede3a0b9a48eb4281ad8a9",
+      "bytes": 66179184,
+      "source": "en",
+      "target": "pt",
+      "version": "1.9"
+    },
+    "en-ru": {
+      "name": "Argos en-ru",
+      "url": "https://argos-net.com/v1/translate-en_ru-1_9.argosmodel",
+      "filename": "translate-en_ru-1_9.argosmodel",
+      "sha256": "591d743ae103752b88ffc38785c50421320f4eff93c8967e0d3d2e14d4e27811",
+      "bytes": 195746693,
+      "source": "en",
+      "target": "ru",
+      "version": "1.9"
+    },
+    "en-es": {
+      "name": "Argos en-es",
+      "url": "https://argos-net.com/v1/translate-en_es-1_0.argosmodel",
+      "filename": "translate-en_es-1_0.argosmodel",
+      "sha256": "d698d0ef87ad70d5d184b7fa6965905bf4368f09a2bb9ffb165a79bac96af0c4",
+      "bytes": 87503191,
+      "source": "en",
+      "target": "es",
+      "version": "1.0"
+    },
+    "fr-en": {
+      "name": "Argos fr-en",
+      "url": "https://argos-net.com/v1/translate-fr_en-1_9.argosmodel",
+      "filename": "translate-fr_en-1_9.argosmodel",
+      "sha256": "3b3052fee6bb1e8e8e632a26a723eb2a2c7710dfe73ba61ffd9b83e85d4f14c1",
+      "bytes": 66585033,
+      "source": "fr",
+      "target": "en",
+      "version": "1.9"
+    },
+    "de-en": {
+      "name": "Argos de-en",
+      "url": "https://argos-net.com/v1/translate-de_en-1_3.argosmodel",
+      "filename": "translate-de_en-1_3.argosmodel",
+      "sha256": "becc2b0011f8249fcb89be9ecb75ba0d876b1fab93c28ee6ff0420936897d637",
+      "bytes": 150512831,
+      "source": "de",
+      "target": "en",
+      "version": "1.3"
+    },
+    "it-en": {
+      "name": "Argos it-en",
+      "url": "https://argos-net.com/v1/translate-it_en-1_0.argosmodel",
+      "filename": "translate-it_en-1_0.argosmodel",
+      "sha256": "d2dd23b8b702f612b8127f07c7a0391f5f2a8b93344e6ddc9dd93c81824e85cb",
+      "bytes": 87190224,
+      "source": "it",
+      "target": "en",
+      "version": "1.0"
+    },
+    "pt-en": {
+      "name": "Argos pt-en",
+      "url": "https://argos-net.com/v1/translate-pt_en-1_9.argosmodel",
+      "filename": "translate-pt_en-1_9.argosmodel",
+      "sha256": "ae76df6f650895c16f2b582065014fab496755ca846ecb19fae81d51f332a38e",
+      "bytes": 69447231,
+      "source": "pt",
+      "target": "en",
+      "version": "1.9"
+    },
+    "ru-en": {
+      "name": "Argos ru-en",
+      "url": "https://argos-net.com/v1/translate-ru_en-1_9.argosmodel",
+      "filename": "translate-ru_en-1_9.argosmodel",
+      "sha256": "e9ba8bf722d10a4a4c39f74289d5938fd47eac08dbe4ed0afd22d89445a5c3ac",
+      "bytes": 156239112,
+      "source": "ru",
+      "target": "en",
+      "version": "1.9"
+    },
+    "es-en": {
+      "name": "Argos es-en",
+      "url": "https://argos-net.com/v1/translate-es_en-1_0.argosmodel",
+      "filename": "translate-es_en-1_0.argosmodel",
+      "sha256": "1b963aa0e0cb6e5ce874f0aa1a1949a19bc4d762e833532239a8834340f6b378",
+      "bytes": 87381097,
+      "source": "es",
+      "target": "en",
+      "version": "1.0"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+[% PROCESS settings/header.html %]
+<div class="settingGroup" lang="[% lt_language | html %]">
+ <h2>Lyric-Translator</h2>
+ <p>[% lt_labels.intro | html %]</p>
+ [% IF lt_error %]<p class="warning">[% lt_error | html %]</p>[% END %]
+ <div class="settingSubGroup">
+  <h3>[% lt_labels.languages | html %]</h3>
+  <p><label for="lt_source">[% lt_labels.source | html %]</label><br>
+   <select name="lt_source" id="lt_source"[% IF lt.state == 'running' || lt.busy %] disabled[% END %]>
+    <option value="auto"[% IF lt.source == 'auto' %] selected[% END %]>[% lt_labels.auto | html %]</option>
+    [% FOREACH option = lt_languages %]<option value="[% option.code | html %]"[% IF option.code == lt.source %] selected[% END %]>[% option.name | html %]</option>[% END %]
+   </select>
+  </p>
+  <p><label for="lt_target">[% lt_labels.target | html %]</label><br>
+   <select name="lt_target" id="lt_target"[% IF lt.state == 'running' || lt.busy %] disabled[% END %]>
+    [% FOREACH option = lt_languages %]<option value="[% option.code | html %]"[% IF option.code == lt.target %] selected[% END %]>[% option.name | html %]</option>[% END %]
+   </select>
+  </p>
+  <p>[% lt_labels.language_help | html %]</p>
+  [% IF lt.detected_name %]<p>[% lt_labels.detected | html %]: [% lt.detected_name | html %]</p>[% END %]
+ </div>
+ <div class="settingSubGroup">
+  <h3>[% lt_labels.local | html %]</h3>
+  <p>[% lt_labels.direction | html %]: [% lt.source_name | html %] &rarr; [% lt.target_name | html %]</p>
+  <p role="status">[% lt.message | html %]</p>
+  [% IF !lt.supported %]
+   <p>[% lt_labels.windows | html %]</p>
+  [% ELSIF lt.state == 'running' %]
+   <p>[% lt_labels.refresh | html %]</p>
+  [% ELSE %]
+   <button type="submit" name="lt_action" value="setup"[% IF lt.busy %] disabled[% END %]>[% lt_labels.setup | html %]</button>
+   <p>[% lt_labels.download_help | html %]</p>
+  [% END %]
+ </div>
+ <div class="settingSubGroup">
+  <label><input type="checkbox" name="pref_showOriginal" value="1"[% IF prefs.showOriginal %] checked="checked"[% END %]> [% lt_labels.show_original | html %]</label>
+ </div>
+ <div class="settingSubGroup">
+  <h3>[% lt_labels.usage | html %]</h3>
+  <p>[% lt_labels.usage_help | html %]</p>
+  <p>[% lt_labels.quality_help | html %]</p>
+  <p>[% lt_labels.app_help | html %]</p>
+  <p>[% lt_labels.data_folder | html %]: <code>[% lt.folder | html %]</code></p>
+ </div>
+</div>
+[% PROCESS settings/footer.html %]

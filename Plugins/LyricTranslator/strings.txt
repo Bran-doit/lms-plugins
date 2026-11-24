@@ -1,0 +1,15 @@
+PLUGIN_LYRICTRANSLATOR
+	DE	Lyric-Translator
+	EN	Lyric-Translator
+
+PLUGIN_LYRICTRANSLATOR_MENU
+	DE	Liedtext auf Deutsch (aus Englisch)
+	EN	German lyrics (from English)
+
+PLUGIN_LYRICTRANSLATOR_ORIGINAL
+	DE	Original-Liedtext
+	EN	Original lyrics
+
+PLUGIN_LYRICTRANSLATOR_TRANSLATED
+	DE	Lokal maschinell übersetzt · Englisch → Deutsch
+	EN	Locally machine translated · English → German
