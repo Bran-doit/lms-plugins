@@ -8,3 +8,11 @@
 - Releases target this GitHub repository. The stable LMS index is `https://github.com/Bran-doit/lms-plugins/releases/download/repository/repo.xml`. Packaging calculates SHA1 and updates the index only after all packages are available.
 - Follow Actions to completion and verify downloadable packages, versions and index checksums. Report actual validation and remaining limitations.
 - Publishing does not authorize installing or restarting a live server. Keep deployment separate.
+
+## Plugin documentation
+
+- Every plugin/app has a README.md in its own directory so GitHub renders a dedicated description page. The root README.md is the catalog, linking to each plugin page and its changelog.
+- Keep the plugin page understandable: purpose, features, prerequisites, installation, usage/settings, limitations, updates, license and links to technical references. Preserve useful README.txt references; keep overlapping facts consistent.
+- Update this documentation with feature changes and before publication. Do not invent screenshots, supported platforms or validation results.
+- User-requested documentation-only website updates may go to main without publishing binaries. For the current push workflow use a dedicated documentation-only commit with [skip ci]; never use this marker to bypass tests for code or release changes.
+- Documentation inside plugin folders affects future ZIP contents. Do not rebuild an already released version with changed documentation; include it in the next version. An explicit workflow_dispatch still publishes and must not be used for documentation-only work.
