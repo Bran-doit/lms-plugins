@@ -21,6 +21,11 @@ jobs:
         run: python -m pip install numpy==2.2.6 py3langid==0.4.0
       - name: Test translation helper
         run: python -m unittest discover -s tests -p 'test_*.py'
+      - name: Test Radio Stations
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libjson-xs-perl liburi-perl
+          prove tests/radiostations-*.t
       - name: Build and publish plugins and repository index
         env:
           GH_TOKEN: ${{ github.token }}

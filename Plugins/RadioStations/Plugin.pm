@@ -1,0 +1,1593 @@
+package Plugins::RadioStations::Plugin;
+
+# ----------------------------------------------------------------------------
+# Lyrion Music Server (LMS) - Radio Browser plugin
+#
+# Browses the community-driven directory at api.radio-browser.info and exposes
+# Search / Top Stations / By Tag / By Country menus under the native LMS Radio
+# menu. Built on Slim::Plugin::OPMLBased so LMS renders the hierarchy natively.
+#
+# API etiquette enforced (see Radio Browser docs):
+#   * No hardcoded mirror - a server is chosen at init via DNS round-robin on
+#     all.api.radio-browser.info (with a graceful fallback).
+#   * Every request carries a descriptive User-Agent header.
+#   * Stations are identified only by their stationuuid.
+#   * Playback is routed through the /json/url/<uuid> click-tracking endpoint so
+#     each play counts toward community popularity metrics.
+# ----------------------------------------------------------------------------
+
+use strict;
+use warnings;
+
+use base qw(Slim::Plugin::OPMLBased);
+
+use Slim::Networking::SimpleAsyncHTTP;
+use Slim::Utils::Log;
+use Slim::Utils::Strings qw(string cstring);
+use Slim::Utils::Cache;
+use Slim::Utils::Prefs;
+
+use URI::Escape qw(uri_escape_utf8);
+use Unicode::Normalize qw(NFD);
+use Plugins::RadioStations::ManualStations;
+use Plugins::RadioStations::RadioStore;
+use Plugins::RadioStations::Detector;
+use Plugins::RadioStations::Artwork;
+use Time::HiRes ();
+
+# JSON decoder. LMS bundles JSON::XS; we keep a single entry point so all
+# decoding is wrapped in eval for robust error handling.
+use JSON::XS ();
+
+use constant USER_AGENT  => 'RadioStations/0.9.0 (fork of https://github.com/hjelev/lyr-radio-browser)';
+use constant DNS_NAME    => 'all.api.radio-browser.info';
+use constant FALLBACK_URL => 'https://all.api.radio-browser.info';
+use constant LIST_TTL    => 86400;    # cache tags/countries for 1 day
+use constant GEO_TTL     => 604800;   # cache detected country for 7 days
+# Defaults for the user-configurable station result cap / cache lifetime
+# (overridable via the settings page; see _maxResults / _cacheTTLSecs).
+use constant DEFAULT_MAX_RESULTS   => 5000;   # effectively "all"; bounds worst-case size
+use constant DEFAULT_TOP_RESULTS   => 100;    # global Most Voted/Most Played chart size
+use constant DEFAULT_MAX_TAGS      => 1000;   # popular tags shown in browse list
+use constant DEFAULT_CACHE_TTL_MIN => 60;     # cache station result lists for 1 hour
+use constant DEFAULT_RECENT_COUNT  => 100;    # stations remembered in Recently Played
+use constant META_TTL              => 2592000;# 30d: uuid->metadata cache for play-time lookup
+
+# Large station lists (tag/search/country) are fetched in chunks rather than one
+# big request so a slow/huge result set degrades to partial results instead of
+# an all-or-nothing timeout. See _stationsRequestPaged.
+use constant STATION_PAGE_SIZE         => 500;  # stations requested per chunk
+use constant STATION_FETCH_BUDGET_SECS => 30;   # wall-clock ceiling across all chunks of one fetch
+use constant STATION_PAGE_PARALLEL     => 4;    # concurrent page requests (bounded: community API)
+use constant STATION_RETRY_LIMIT       => 100;  # smaller retry when the very first chunk fails
+
+# IP-geolocation providers, tried in order until one yields a 2-letter country
+# code. LMS has no built-in country pref, so we infer it from the server's
+# public IP. Each entry maps the provider's JSON fields to code/name (name is
+# optional - when absent we derive a display name from the code via
+# _countryName). The LMS community service is purpose-built for plugins (no rate
+# limit) so it is tried first; the rate-limited third-party APIs remain as
+# fallbacks should it ever be unavailable.
+use constant GEO_PROVIDERS => (
+	{ url => 'https://api.lms-community.org/geoip/', code => 'country' },
+	{ url => 'https://ipapi.co/json/', code => 'country_code', name => 'country_name' },
+	{ url => 'https://ipwho.is/',      code => 'country_code', name => 'country'      },
+);
+
+# Logger category - configurable under Settings > Advanced > Logging.
+my $log = Slim::Utils::Log->addLogCategory({
+	category     => 'plugin.radiostations',
+	defaultLevel => 'ERROR',
+	description  => 'PLUGIN_RADIOSTATIONS',
+});
+
+# Plugin preferences (manual country override; blank = auto-detect).
+my $prefs = preferences('plugin.radiostations');
+
+my $cache;
+my $autoActive;
+
+# Base URL for this server session, chosen once at init.
+my $BASE_URL = FALLBACK_URL;
+
+# ----------------------------------------------------------------------------
+# Plugin lifecycle
+# ----------------------------------------------------------------------------
+
+sub initPlugin {
+	my $class = shift;
+	$autoActive=1;
+
+	$cache = Slim::Utils::Cache->new();
+
+	$prefs->init({
+		countryOverride => '',
+		maxResults      => DEFAULT_MAX_RESULTS,
+		topResults      => DEFAULT_TOP_RESULTS,
+		maxTags         => DEFAULT_MAX_TAGS,
+		cacheTTL        => DEFAULT_CACHE_TTL_MIN,
+		hideBroken      => 1,
+		recentCount     => DEFAULT_RECENT_COUNT,
+		menuLocation    => 'radios',
+		radioFavorites  => 0,
+		pendingManual => [],
+		pendingSelection => {},
+		autoDetectRadio => 1,
+		moveRadioFavorites => 0,
+		autoImported => {},
+		autoExcluded => {},
+		favoritesSort => 'alpha',
+		favoritesOrder => [],
+		manualStations  => '',
+		favoriteStationUrls => {},
+		recent          => [],
+	});
+
+	# Keep the numeric prefs sane: positive integers within practical bounds.
+	$prefs->setValidate({ validator => 'intlimit', low => 1, high => 100000 }, 'maxResults');
+	$prefs->setValidate({ validator => 'intlimit', low => 1, high => 10000  }, 'topResults');
+	$prefs->setValidate({ validator => 'intlimit', low => 1, high => 10000  }, 'maxTags');
+	$prefs->setValidate({ validator => 'intlimit', low => 1, high => 10080  }, 'cacheTTL');
+	$prefs->setValidate({ validator => 'intlimit', low => 1, high => 1000   }, 'recentCount');
+
+	# Observe playlist commands so each play is captured for the Recently Played
+	# list. This is a passive observer (it never modifies playback), and it is
+	# guarded so a failure here can never abort initPlugin.
+	eval {
+		require Slim::Control::Request;
+		Slim::Control::Request::subscribe(
+			\&_onPlaylistCmd,
+			[ ['playlist'], ['play', 'load', 'add', 'insert'] ],
+		);
+		Slim::Control::Request::subscribe(\&_onFavoritesChanged, [['favorites'], ['changed']]);
+		Slim::Control::Request::subscribe(\&_onArtworkChanged, [['playlist'], ['newsong']]);
+	};
+	$log->error("Radio Browser: could not subscribe to playlist commands: $@") if $@;
+
+	# Pick an API mirror via DNS round-robin. Fire-and-forget and fully
+	# non-blocking: $BASE_URL stays at FALLBACK_URL (a working round-robin
+	# endpoint) until the async resolution lands and updates it.
+	_resolveBaseUrlAsync();
+
+	# Web settings page for the manual country override (web UI only).
+	if ( main::WEBUI ) {
+		require Plugins::RadioStations::Settings;
+		Plugins::RadioStations::Settings->new;
+	}
+
+	# Auto-detect the listener's country in the background (unless overridden).
+	_maybeDetectCountry();
+
+	# Menu placement (Radio vs Apps) is settings-configurable but only read once
+	# here at init, so a change takes effect on the next server restart.
+	my $under_apps = _menuLocation() eq 'apps';
+
+	$class->SUPER::initPlugin(
+		feed   => \&handleFeed,
+		tag    => 'radiostations',
+		menu   => $under_apps ? 'apps' : 'radios',
+		is_app => $under_apps ? 1 : 0,
+		weight => 50,
+	);
+	if ( $prefs->get('radioFavorites') ) {
+		require Plugins::RadioStations::Favorites;
+		Plugins::RadioStations::Favorites->initPlugin;
+	}
+	_scheduleRadioScan(10);
+	eval { favoriteItems(undef) }; # Seed saved logos even before browsing a menu.
+}
+
+sub getDisplayName { 'PLUGIN_RADIOSTATIONS' }
+
+sub shutdownPlugin {
+	$autoActive=0;
+	require Slim::Utils::Timers;
+	Slim::Utils::Timers::killTimers(__PACKAGE__, \&_runRadioScan);
+}
+
+# The heart belongs to LMS Favorites. Keep that as the source of truth and
+# remember only which URLs were recognized as Radio Stations streams.
+# Persist recognition on favorite changes, so it survives the station cache.
+sub _radioFavoriteItems {
+	my ($client) = @_;
+	require Slim::Utils::Favorites;
+	my $favorites = Slim::Utils::Favorites->new($client);
+	return [] unless $favorites;
+	my $known = $prefs->get('favoriteStationUrls') || {};
+	my %updated = %$known;
+	my ($changed, %seen, @items);
+	for my $fav (@{ $favorites->all || [] }) {
+		my $url = $fav->{url} || next;
+		next if $seen{$url}++;
+		my $uuid = $known->{$url} || $cache->get('rs_url:' . $url);
+		next unless $uuid;
+		if (!$known->{$url}) {
+			$updated{$url} = $uuid;
+			$changed = 1;
+		}
+		push @items, {
+			name => $fav->{title} || $url,
+			type => 'audio', url => $url, favorites_url => $url,
+			image => 'plugins/RadioStations/html/images/icon.png',
+			on_select => 'play', playall => 1, bitrate => 128,
+		};
+	}
+	$prefs->set('favoriteStationUrls', \%updated) if $changed;
+	return [ sort { _compareNames($a, $b) } @items ];
+}
+
+sub _onFavoritesChanged {
+	my ($request) = @_;
+	eval { _radioFavoriteItems($request ? $request->client : undef); 1 }
+		or $log->error("Radio Stations: favorites synchronization failed: $@");
+	_scheduleRadioScan(2);
+}
+
+sub _onArtworkChanged {
+	my ($request)=@_;
+	eval { Plugins::RadioStations::Artwork::playing($request->client) if $request; 1 }
+		or $log->error("Radio Stations: artwork fallback failed: $@");
+}
+
+sub favoriteItems {
+	my ($client) = @_;
+	my $items = [];
+	my ($manual) = Plugins::RadioStations::ManualStations::parse($prefs->get('manualStations'));
+	my $stored = Plugins::RadioStations::RadioStore::load();
+	my @imported = map {{
+		%$_, type => 'audio', favorites_url => $_->{url},
+		image => $_->{image} || 'plugins/RadioStations/html/images/icon.png',
+		on_select => 'play', playall => 1, bitrate => 128,
+	}} @$stored;
+	# Manual names take precedence when a URL is also a heart favorite.
+	my %seen;
+	$items = [sort { _compareNames($a, $b) } grep { !$seen{$_->{url}}++ } (@$manual, @imported, @$items)];
+	$_->{id} = Plugins::RadioStations::RadioStore::id($_->{url}) for @$items;
+	for my $item (@$items) {
+		my $logo=Plugins::RadioStations::Artwork::remember($item->{url},$item->{image})
+			|| Plugins::RadioStations::Artwork::logo($item->{url});
+		if ($logo) { $item->{image}=$logo; Plugins::RadioStations::Artwork::seed($item->{url},$logo) }
+	}
+	if (($prefs->get('favoritesSort') || '') eq 'manual') {
+		my %rank; my $i=0;
+		$rank{$_} = $i++ for @{$prefs->get('favoritesOrder') || []};
+		$items = [sort { ($rank{$a->{id}} // $i) <=> ($rank{$b->{id}} // $i) || _compareNames($a,$b) } @$items];
+	}
+	return $items;
+}
+
+sub tableItems {
+	my ($client)=@_;
+	my $stored=favoriteItems($client);
+	my %seen; my @rows;
+	for my $item (@$stored) { push @rows,{%$item, stored=>1}; $seen{$item->{id}}=1; }
+	my $favorites=Slim::Utils::Favorites->new($client);
+	my $candidates=$favorites ? Plugins::RadioStations::RadioStore::candidates($favorites,_knownRadioUrls()) : [];
+	my $selection=$prefs->get('pendingSelection') || {};
+	my $excluded=$prefs->get('autoExcluded') || {};
+	for my $item (@{$prefs->get('pendingManual') || []}, @$candidates) {
+		my $id=$item->{id} || Plugins::RadioStations::RadioStore::id($item->{url});
+		next if $seen{$id}++;
+		my $status=detectionStatus($id);
+		my $radio=$item->{manual} || $status->{kind} eq 'radio';
+		push @rows,{%$item,id=>$id,stored=>0,
+			autoExcluded=>($excluded->{$id} || ($prefs->get('autoImported') || {})->{$id}),
+			selected=>exists $selection->{$id} ? $selection->{$id} : ($radio && !$excluded->{$id} ? 1 : 0),
+			statusToken=>'PLUGIN_RADIOSTATIONS_DETECT_'.uc($radio ? 'radio' : $status->{kind}),
+		};
+	}
+	@rows=sort {_compareNames($a,$b)} @rows;
+	if (($prefs->get('favoritesSort') || '') eq 'manual') {
+		my %rank;my $i=0;$rank{$_}=$i++ for @{$prefs->get('favoritesOrder') || []};
+		@rows=sort {($rank{$a->{id}} // $i)<=>($rank{$b->{id}} // $i) || _compareNames($a,$b)} @rows;
+	}
+	return \@rows;
+}
+
+sub moveFavorite {
+	my ($client, $action) = @_;
+	if ($action eq 'alpha') { $prefs->set('favoritesSort','alpha'); return; }
+	return unless $action =~ /^(up|down):([a-f0-9]{64})$/;
+	my ($direction,$id)=($1,$2);
+	my $items=tableItems($client);
+	for my $i (0..$#$items) {
+		next unless $items->[$i]{id} eq $id;
+		my $j=$i+($direction eq 'up' ? -1 : 1);
+		return if $j<0 || $j>$#$items;
+		@$items[$i,$j]=@$items[$j,$i];
+		$prefs->set('favoritesOrder',[map {$_->{id}} @$items]);
+		$prefs->set('favoritesSort','manual');
+		last;
+	}
+}
+
+sub radioFavoritesFeed {
+	my ($client, $cb) = @_;
+	return $cb->({items => []}) unless $prefs->get('radioFavorites');
+	my $items=eval {favoriteItems($client)};
+	return $cb->(_errorItems()) if $@;
+	$items = [{name => cstring($client, 'PLUGIN_RADIOSTATIONS_FAVORITES_EMPTY'), type => 'text'}] unless @$items;
+	my $feed={items=>$items,window=>{menuStyle=>'album',windowStyle=>'icon_list'}};
+	$cb->(($prefs->get('favoritesSort') || '') eq 'manual' ? $feed : _alphabeticFeed($feed));
+}
+
+my $radioScanBusy;
+sub _knownRadioUrls {
+	my %known=%{$prefs->get('favoriteStationUrls') || {}};
+	my ($manual)=Plugins::RadioStations::ManualStations::parse($prefs->get('manualStations'));
+	$known{$_->{url}}='manual' for @$manual;
+	$known{$_->{url}}='stored' for @{Plugins::RadioStations::RadioStore::load()};
+	return \%known;
+}
+sub detectionStatus {
+	my ($id)=@_;
+	return $cache->get('rs_detection:' . $id) || {kind=>'pending',reason=>'pending'};
+}
+
+sub _scheduleRadioScan {
+	my ($delay)=@_;
+	return unless $autoActive && $prefs->get('autoDetectRadio');
+	require Slim::Utils::Timers;
+	Slim::Utils::Timers::killTimers(__PACKAGE__, \&_runRadioScan);
+	Slim::Utils::Timers::setTimer(__PACKAGE__, Time::HiRes::time()+($delay || 2), \&_runRadioScan);
+}
+
+sub _runRadioScan {
+	return unless $autoActive && $prefs->get('autoDetectRadio');
+	return _scheduleRadioScan(60) if $radioScanBusy;
+	my @queue;
+	eval {
+		require Slim::Utils::Favorites;
+		my $favorites=Slim::Utils::Favorites->new();
+		if ($favorites) {
+			my $excluded=$prefs->get('autoExcluded') || {};
+			my $known=_knownRadioUrls();
+			my %handled=%{$prefs->get('autoImported') || {}};
+			$handled{$_->{id} || Plugins::RadioStations::RadioStore::id($_->{url})}=1 for @{Plugins::RadioStations::RadioStore::load()};
+			$prefs->set('autoImported',\%handled);
+			@queue=grep {!$excluded->{$_->{id}} && !$handled{$_->{id}} && ($known->{$_->{url}} || !$cache->get('rs_detection:'.$_->{id}) || detectionStatus($_->{id})->{kind} eq 'radio')}
+				@{Plugins::RadioStations::RadioStore::candidates($favorites, $known)};
+		}
+		1;
+	} or $log->error("Radio Stations: cannot enumerate favorites: $@");
+	# Bound each pass; already checked items are cached and skipped next time.
+	splice @queue,100 if @queue>100;
+	$radioScanBusy=1;
+	_radioScanNext(\@queue);
+}
+
+sub _radioScanNext {
+	my ($queue)=@_;
+	my $entry=shift @$queue;
+	unless ($entry && $autoActive && $prefs->get('autoDetectRadio')) {
+		$radioScanBusy=0;
+		_scheduleRadioScan(60);
+		return;
+	}
+	my $completed;
+	my $done=sub {
+		my ($result)=@_;
+		return if $completed++;
+		eval {
+			$cache->set('rs_detection:'.$entry->{id},$result, $result->{reason} eq 'unreachable' ? 600 : 21600);
+			if ($result->{kind} eq 'radio' && $autoActive && $prefs->get('autoDetectRadio')
+				&& !($prefs->get('autoExcluded') || {})->{$entry->{id}}
+				&& !($prefs->get('autoImported') || {})->{$entry->{id}}) {
+				my $favorites=Slim::Utils::Favorites->new();
+				if ($favorites && grep {$_->{id} eq $entry->{id}} @{Plugins::RadioStations::RadioStore::candidates($favorites,{})}) {
+					my $selected={$entry->{id}=>1};
+					if ($prefs->get('moveRadioFavorites')) {Plugins::RadioStations::RadioStore::move_selected($favorites,$selected,{})}
+					else {Plugins::RadioStations::RadioStore::copy_selected($favorites,$selected,{})}
+					$prefs->set('autoImported',{%{$prefs->get('autoImported') || {}},$entry->{id}=>1});
+					$prefs->set('radioFavorites',1);
+					require Plugins::RadioStations::Favorites;
+					Plugins::RadioStations::Favorites->initPlugin;
+				}
+			}
+			1;
+		} or $log->error("Radio Stations: radio detection failed: $@");
+		# Yield between candidates, including synchronous known-URL matches.
+		require Slim::Utils::Timers;
+		Slim::Utils::Timers::setTimer($queue,Time::HiRes::time()+0.1,\&_radioScanNext);
+	};
+	eval {
+		my $cached=$cache->get('rs_detection:'.$entry->{id});
+		if ($cached && $cached->{kind} eq 'radio') { $done->($cached); return; }
+		Plugins::RadioStations::Detector::classify($entry,_knownRadioUrls(),
+			sub {_apiGet(@_,5)},$done);
+		1;
+	} or $done->({kind=>'unknown',reason=>'unreachable'});
+}
+
+# ----------------------------------------------------------------------------
+# DNS load balancing (CLAUDE.md sec 3.1) with graceful fallback.
+#
+# Asynchronously resolve A records for all.api.radio-browser.info, pick one at
+# random, then reverse-resolve it to a real mirror hostname (e.g.
+# de1.api.radio-browser.info) and pin $BASE_URL to it for the session.
+#
+# This MUST stay non-blocking: LMS runs a single-threaded event loop, so a
+# synchronous DNS lookup at init could stall the whole server (and playback) for
+# seconds (see issue #3). We use AnyEvent::DNS - the same async resolver LMS uses
+# internally via Slim::Networking::Async::DNS - which schedules its own timeouts
+# and retries on the event loop. The LMS wrapper itself is not usable here: it
+# does forward A-resolution only, returns a single address, and has no PTR,
+# whereas we need the full A-record list (to randomize) plus a reverse lookup.
+#
+# Until resolution lands $BASE_URL stays at FALLBACK_URL, which is a fully
+# working round-robin endpoint (the wildcard TLS cert covers both it and the
+# specific mirrors, so the PTR step is for honoring the per-mirror API guidance,
+# not for cert validity). Any failure simply leaves FALLBACK_URL in place.
+# ----------------------------------------------------------------------------
+
+sub _resolveBaseUrlAsync {
+	my $ok = eval {
+		require AnyEvent::DNS;
+
+		AnyEvent::DNS::a( DNS_NAME, sub {
+			my @ips = @_;
+			unless ( @ips ) {
+				$log->warn( 'DNS round-robin: no A records for ' . DNS_NAME . "; keeping $BASE_URL" );
+				return;
+			}
+
+			# Random selection spreads load across mirrors per the API guidelines.
+			my $ip = $ips[ int( rand( scalar @ips ) ) ];
+
+			# Reverse-resolve so the HTTPS Host header / TLS SNI is a real mirror name.
+			AnyEvent::DNS::reverse_lookup( $ip, sub {
+				my ( $host ) = @_;
+				unless ( $host ) {
+					$log->warn( "DNS round-robin: no PTR for $ip; keeping $BASE_URL" );
+					return;
+				}
+
+				$host =~ s/\.$//;
+				$BASE_URL = "https://$host";
+				$log->info("Radio Browser using base URL: $BASE_URL");
+			} );
+		} );
+
+		1;
+	};
+
+	if ( !$ok ) {
+		$log->warn( 'DNS round-robin unavailable (' . ( $@ || 'unknown' ) . "); keeping $BASE_URL" );
+	}
+}
+
+# ----------------------------------------------------------------------------
+# Central async fetch helper. Performs a non-blocking GET against the chosen
+# mirror, decodes JSON safely, and routes results to $cb / errors to $ecb.
+# ----------------------------------------------------------------------------
+
+sub _apiGet {
+	my ( $path, $cb, $ecb, $timeout ) = @_;
+
+	my $url = $BASE_URL . $path;
+	$log->debug("GET $url");
+
+	Slim::Networking::SimpleAsyncHTTP->new(
+		sub {
+			my $http = shift;
+			my $data = eval { JSON::XS::decode_json( $http->content ) };
+
+			if ( $@ || !defined $data ) {
+				$log->error("JSON decode failed for $url: " . ( $@ || 'empty' ));
+				return $ecb->("decode error");
+			}
+
+			$cb->($data);
+		},
+		sub {
+			my ( $http, $error ) = @_;
+			$log->error("HTTP request failed for $url: " . ( $error || 'unknown' ));
+			$ecb->( $error || 'http error' );
+		},
+		{
+			timeout => $timeout || 15,
+		},
+	)->get( $url, 'User-Agent' => USER_AGENT );
+}
+
+# Build a single OPML error item so menus degrade gracefully instead of hanging.
+sub _errorItems {
+	return {
+		items => [ { name => cstring( undef, 'PLUGIN_RADIOSTATIONS_ERROR' ), type => 'text' } ],
+	};
+}
+
+# ----------------------------------------------------------------------------
+# Top-level menu
+# ----------------------------------------------------------------------------
+
+sub handleFeed {
+	my ( $client, $cb, $args ) = @_;
+
+	# Resolve the listener's country (manual override or auto-detected). If it
+	# isn't known yet, trigger detection so a later menu open can show it.
+	my ( $code, $name ) = _activeCountry();
+	_maybeDetectCountry() unless $code;
+
+	# Top Stations: the global lists, plus country-specific ones when known.
+	my @top = (
+		{
+			name => cstring( $client, 'PLUGIN_RADIOSTATIONS_TOP_VOTED' ),
+			type => 'link',
+			url  => \&topStations,
+			passthrough => [ { order => 'topvote' } ],
+		},
+		{
+			name => cstring( $client, 'PLUGIN_RADIOSTATIONS_TOP_CLICKED' ),
+			type => 'link',
+			url  => \&topStations,
+			passthrough => [ { order => 'topclick' } ],
+		},
+	);
+
+	if ( $code ) {
+		push @top,
+			{
+				name => cstring( $client, 'PLUGIN_RADIOSTATIONS_TOP_VOTED' ) . " \x{00B7} $name",
+				type => 'link',
+				url  => \&stationsByCountry,
+				passthrough => [ { code => $code, order => 'votes' } ],
+			},
+			{
+				name => cstring( $client, 'PLUGIN_RADIOSTATIONS_TOP_CLICKED' ) . " \x{00B7} $name",
+				type => 'link',
+				url  => \&stationsByCountry,
+				passthrough => [ { code => $code, order => 'clickcount' } ],
+			};
+	}
+
+	my @items = (
+		{
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_SEARCH' ),
+			type  => 'search',
+			url   => \&searchStations,
+		},
+		{
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_TOP' ),
+			type  => 'link',
+			items => \@top,
+		},
+		{
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_BY_TAG' ),
+			type  => 'link',
+			url   => \&listTags,
+		},
+		{
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_BY_COUNTRY' ),
+			type  => 'link',
+			url   => \&listCountries,
+		},
+	);
+
+	# Recently Played: locally remembered history, surfaced near the top.
+	unshift @items, {
+		name => cstring( $client, 'PLUGIN_RADIOSTATIONS_RECENT' ),
+		type => 'link',
+		url  => \&recentStations,
+	};
+
+	# Surface local stations prominently as the very first entry.
+	if ( $code ) {
+		unshift @items, {
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_LOCAL' ) . " \x{00B7} $name",
+			type  => 'link',
+			url   => \&localRegions,
+			passthrough => [ { code => $code } ],
+		};
+	}
+
+	$cb->({ items => \@items });
+}
+
+# ----------------------------------------------------------------------------
+# Search by station name. OPML supplies the typed query in $args->{search}.
+# ----------------------------------------------------------------------------
+
+sub searchStations {
+	my ( $client, $cb, $args ) = @_;
+
+	my $query = $args->{search} || '';
+	$query =~ s/^\s+|\s+$//g;
+
+	return $cb->( { items => [ { name => cstring( $client, 'PLUGIN_RADIOSTATIONS_NONE' ), type => 'text' } ] } )
+		unless length $query;
+
+	my $basePath    = '/json/stations/byname/' . _uri( $query );
+	my $querySuffix = 'order=name&reverse=false' . _brokenSuffix();
+
+	_stationsRequestPaged( $client, $cb, $basePath, $querySuffix );
+}
+
+# ----------------------------------------------------------------------------
+# Top stations (most voted or most clicked).
+# ----------------------------------------------------------------------------
+
+sub topStations {
+	my ( $client, $cb, $args, $pt ) = @_;
+
+	my $order = ( $pt && $pt->{order} ) || 'topvote';
+	my $path  = "/json/stations/$order/" . _topResults();
+	$path .= '?hidebroken=true' if _hideBroken();
+
+	_stationsRequest( $client, $cb, $path );
+}
+
+# ----------------------------------------------------------------------------
+# Tag / genre list -> drill into stations for the chosen tag.
+# ----------------------------------------------------------------------------
+
+sub listTags {
+	my ( $client, $cb, $args ) = @_;
+	$cb = _alphabeticCallback($cb);
+
+	my $search_item = {
+		name => cstring( $client, 'PLUGIN_RADIOSTATIONS_SEARCH_TAGS' ),
+		type => 'search',
+		url  => \&searchTags,
+	};
+
+	# Cache key encodes the limit so a settings change yields a fresh fetch.
+	my $cache_key = 'radiostations_tags:' . _maxTags();
+	my $cached    = $cache->get($cache_key);
+	if ( $cached ) {
+		my $items = _tagItems( $client, $cached );
+		return $cb->( { items => [ $search_item, @$items ] } );
+	}
+
+	_apiGet(
+		'/json/tags?order=stationcount&reverse=true&limit=' . _maxTags() . _brokenSuffix(),
+		sub {
+			my $tags = shift;
+			$cache->set( $cache_key, $tags, LIST_TTL );
+			my $items = _tagItems( $client, $tags );
+			$cb->( { items => [ $search_item, @$items ] } );
+		},
+		sub { $cb->( _errorItems() ) },
+	);
+}
+
+sub searchTags {
+	my ( $client, $cb, $args ) = @_;
+	$cb = _alphabeticCallback($cb);
+
+	my $query = $args->{search} || '';
+	$query =~ s/^\s+|\s+$//g;
+
+	return $cb->( { items => [ { name => cstring( $client, 'PLUGIN_RADIOSTATIONS_NONE' ), type => 'text' } ] } )
+		unless length $query;
+
+	_apiGet(
+		'/json/tags/' . _uri($query) . '?order=stationcount&reverse=true&limit=100',
+		sub {
+			my $tags = shift;
+			$cb->( { items => _tagItems( $client, $tags ) } );
+		},
+		sub { $cb->( _errorItems() ) },
+	);
+}
+
+sub _tagItems {
+	my ( $client, $tags ) = @_;
+
+	my @items =
+		map {
+			{
+				name        => ucfirst( $_->{name} ) . ' (' . ( $_->{stationcount} || 0 ) . ')',
+				type        => 'link',
+				url         => \&stationsByTag,
+				passthrough => [ { tag => $_->{name}, count => $_->{stationcount} } ],
+			}
+		}
+		sort { _compareNames($a, $b) }
+		grep { $_->{name} && ( $_->{stationcount} || 0 ) > 0 }
+		@{ $tags || [] };
+
+	return @items ? \@items : [ { name => cstring( $client, 'PLUGIN_RADIOSTATIONS_NONE' ), type => 'text' } ];
+}
+
+sub stationsByTag {
+	my ( $client, $cb, $args, $pt ) = @_;
+
+	my $tag         = ( $pt && $pt->{tag} ) || '';
+	my $basePath    = '/json/stations/bytagexact/' . _uri( $tag );
+	my $querySuffix = 'order=name&reverse=false' . _brokenSuffix();
+
+	_stationsRequestPaged( $client, $cb, $basePath, $querySuffix, $pt && $pt->{count} );
+}
+
+# ----------------------------------------------------------------------------
+# Country list -> drill into stations for the chosen country code.
+# ----------------------------------------------------------------------------
+
+sub listCountries {
+	my ( $client, $cb, $args ) = @_;
+	$cb = _alphabeticCallback($cb);
+
+	my $cached = $cache->get('radiostations_countries');
+	return $cb->( { items => _countryItems( $client, $cached ) } ) if $cached;
+
+	_apiGet(
+		'/json/countries?order=name' . _brokenSuffix(),
+		sub {
+			my $countries = shift;
+			$cache->set( 'radiostations_countries', $countries, LIST_TTL );
+			$cb->( { items => _countryItems( $client, $countries ) } );
+		},
+		sub { $cb->( _errorItems() ) },
+	);
+}
+
+sub _countryItems {
+	my ( $client, $countries ) = @_;
+
+	my @items =
+		map {
+			{
+				name        => $_->{name} . ' (' . ( $_->{stationcount} || 0 ) . ')',
+				type        => 'link',
+				url         => \&listRegions,
+				passthrough => [ { code => $_->{iso_3166_1}, country => $_->{name}, count => $_->{stationcount} } ],
+			}
+		}
+		sort { _compareNames($a, $b) }
+		grep { $_->{name} && $_->{iso_3166_1} && ( $_->{stationcount} || 0 ) > 0 }
+		@{ $countries || [] };
+
+	return @items ? \@items : [ { name => cstring( $client, 'PLUGIN_RADIOSTATIONS_NONE' ), type => 'text' } ];
+}
+
+sub localRegions {
+	my ($client, $cb, $args, $pt) = @_;
+	my $code = $pt && $pt->{code};
+	return $cb->(_errorItems()) unless $code && $code =~ /^[A-Z]{2}$/;
+	my $fallback = sub {
+		$cb->(_alphabeticFeed({items => [
+			{ name => cstring($client, 'PLUGIN_RADIOSTATIONS_ALL_COUNTRY'),
+			  textkey => ' ', type => 'link', url => \&stationsByCountry,
+			  passthrough => [{code => $code}] },
+			@{_errorItems()->{items}},
+		]}));
+	};
+	my $resolve = sub {
+		my ($countries) = @_;
+		return $fallback->() unless ref $countries eq 'ARRAY';
+		for my $country (@$countries) {
+			next unless ($country->{iso_3166_1} || '') eq $code && $country->{name};
+			return listRegions($client, $cb, $args, {
+				code => $code, country => $country->{name}, count => $country->{stationcount},
+			});
+		}
+		$fallback->();
+	};
+	# The regions endpoint needs the database's full country name, not DE/AT/CH.
+	# Resolve it even when the user has never opened the country list.
+	my $countries = $cache->get('radiostations_countries');
+	return $resolve->($countries) if $countries;
+	_apiGet('/json/countries?order=name', sub {
+		my $data = shift;
+		$cache->set('radiostations_countries', $data, LIST_TTL) if ref $data eq 'ARRAY';
+		$resolve->($data);
+	}, $fallback);
+}
+
+sub listRegions {
+	my ( $client, $cb, $args, $pt ) = @_;
+	$cb = _alphabeticCallback($cb);
+	return $cb->( _errorItems() ) unless $pt && ($pt->{code} || '') =~ /^[A-Z]{2}$/ && $pt->{country};
+	my $all = {
+		textkey => ' ',
+		name => cstring( $client, 'PLUGIN_RADIOSTATIONS_ALL_COUNTRY' ),
+		type => 'link', url => \&stationsByCountry,
+		passthrough => [ { code => $pt->{code}, count => $pt->{count} } ],
+	};
+	my $render = sub {
+		my ($states, $failed) = @_;
+		my $items = _regionItems( $client, $states, $pt );
+		push @$items, @{ _errorItems()->{items} } if $failed;
+		$cb->({ items => [ $all, @$items ] });
+	};
+	my $key = 'radiostations_regions:' . _uri($pt->{country}) . ':' . ( _hideBroken() ? 1 : 0 );
+	if ( my $states = $cache->get($key) ) {
+		return $render->($states);
+	}
+	# The country must be in the path: some mirrors ignore ?country=Germany.
+	_apiGet(
+		'/json/states/' . _uri($pt->{country}) . '/?order=name&limit=10000' . _brokenSuffix(),
+		sub {
+			my $states = shift;
+			return $render->([], 1) unless ref $states eq 'ARRAY';
+			$cache->set( $key, $states, LIST_TTL );
+			$render->($states);
+		},
+		sub { $render->([], 1) },
+	);
+}
+
+sub _regionItems {
+	my ( $client, $states, $pt ) = @_;
+	# Keep the original database value for exact matching, including whitespace.
+	# Region names are community-maintained (e.g. Bayern and Bavaria coexist).
+	my @items = map {
+		{
+			name => $_->{name} . ' (' . $_->{stationcount} . ')',
+			type => 'link',
+			url => \&stationsByRegion,
+			passthrough => [ { state => $_->{name}, code => $pt->{code} } ],
+		}
+	} sort { _compareNames($a, $b) }
+		grep { ref $_ eq 'HASH' && ( $_->{country} || '' ) eq $pt->{country}
+			&& defined $_->{name} && $_->{name} =~ /\S/
+			&& ( $_->{stationcount} || 0 ) > 0 } @$states;
+	return \@items;
+}
+
+sub stationsByRegion {
+	my ( $client, $cb, $args, $pt ) = @_;
+	my $state = $pt && $pt->{state};
+	return $cb->( _errorItems() ) unless defined $state && $state =~ /\S/ && ($pt->{code} || '') =~ /^[A-Z]{2}$/;
+	my $query = 'countrycode=' . _uri($pt->{code}) . '&state=' . _uri($state)
+		. '&stateExact=true&order=name&reverse=false' . _brokenSuffix();
+	_stationsRequestPaged( $client, $cb, '/json/stations/search', $query );
+}
+
+sub stationsByCountry {
+	my ( $client, $cb, $args, $pt ) = @_;
+
+	my $code  = ( $pt && $pt->{code} )  || '';
+	# Order defaults to alphabetical for the plain browse-by-country menu; callers
+	# request 'votes' or 'clickcount' explicitly for the popularity-branded charts
+	# (Top Voted/Top Clicked/Local · country), which stay sorted descending.
+	my $order       = ( $pt && $pt->{order} ) || 'name';
+	my $reverse     = ( $order eq 'name' ) ? 'false' : 'true';
+	my $basePath    = '/json/stations/bycountrycodeexact/' . _uri( $code );
+	my $querySuffix = 'order=' . _uri( $order ) . '&reverse=' . $reverse . _brokenSuffix();
+
+	# The country browse list passes its count through; the Local/Top-by-country
+	# entries only carry {code, order}, so fall back to the cached countries list.
+	my $count = ( $pt && $pt->{count} ) || _countryStationCount( $code );
+
+	_stationsRequestPaged( $client, $cb, $basePath, $querySuffix, $count );
+}
+
+# Look up a country's station count from the cached countries list (undef when
+# the list isn't cached yet - callers then fall back to the sequential fetch).
+sub _countryStationCount {
+	my $code = shift or return undef;
+
+	my $countries = $cache->get('radiostations_countries');
+	return undef unless ref $countries eq 'ARRAY';
+
+	for my $c ( @{ $countries } ) {
+		return $c->{stationcount} if $c->{iso_3166_1} && $c->{iso_3166_1} eq $code;
+	}
+
+	return undef;
+}
+
+# ----------------------------------------------------------------------------
+# Fetch a station list (cached) and hand it back as a grid feed.
+#
+# The full result set is cached per query ($path uniquely encodes it) so large
+# lists aren't refetched while the user scrolls/pages. We return ALL stations:
+# LMS XMLBrowser windows long lists server-side, so the client only receives the
+# slice it asks for and gets native scroll / next-page (no "load more" needed).
+# ----------------------------------------------------------------------------
+
+sub _stationsRequest {
+	my ( $client, $cb, $path ) = @_;
+
+	my $key = 'rs_stations:' . $path;
+	if ( my $stations = $cache->get($key) ) {
+		return $cb->( _stationsFeed( $client, $stations ) );
+	}
+
+	_apiGet(
+		$path,
+		sub {
+			my $stations = shift;
+			$cache->set( $key, $stations, _cacheTTLSecs() );
+			$cb->( _stationsFeed( $client, $stations ) );
+		},
+		sub { $cb->( _errorItems() ) },
+	);
+}
+
+# ----------------------------------------------------------------------------
+# Paginated station fetch for potentially huge result sets (tag/search/country).
+#
+# A single request for thousands of stations can be slow enough to blow the
+# per-request timeout in _apiGet, and since that request is fully buffered
+# there is nothing partial to recover from it if it does. Instead we fetch in
+# STATION_PAGE_SIZE chunks via limit/offset, two strategies:
+#
+#  - When the caller knows the (approximate) total station count - the tag and
+#    country menus display it anyway - all pages are computed up front and
+#    fetched concurrently, STATION_PAGE_PARALLEL at a time, then stitched back
+#    together in order. Failed pages truncate the list at the first gap so
+#    ordering stays contiguous; whatever was retrieved is shown, flagged
+#    partial. A lone page-0 failure is retried once when other pages succeeded.
+#  - Without a count (search), pages are fetched sequentially, accumulating
+#    until end-of-data, the cap, or the STATION_FETCH_BUDGET_SECS budget; a
+#    failure mid-way returns what has accumulated (flagged partial), and a
+#    failure on the very first chunk is retried once with a smaller
+#    STATION_RETRY_LIMIT request before giving up.
+#
+# Only a complete fetch (end of data or hit the user's cap, no failed pages)
+# is cached, so a partial result is retried fresh next time rather than stuck
+# for the TTL.
+# ----------------------------------------------------------------------------
+
+sub _stationsRequestPaged {
+	my ( $client, $cb, $basePath, $querySuffix, $count ) = @_;
+
+	my $cap = _maxResults();
+	my $key = 'rs_stations:' . $basePath . '?' . $querySuffix . '&limit=' . $cap;
+
+	if ( my $stations = $cache->get($key) ) {
+		return $cb->( _stationsFeed( $client, $stations ) );
+	}
+
+	if ( $count && $count > 0 ) {
+		return _fetchStationPagesParallel( $client, $cb, $basePath, $querySuffix, $cap, $key, $count );
+	}
+
+	_fetchStationPage( $client, $cb, $basePath, $querySuffix, $cap, $key, [], 0, Time::HiRes::time(), 0 );
+}
+
+# Parallel path: $count is advisory (the tag/country lists are cached for a
+# day and hidebroken skews the numbers), so short or empty pages just mean the
+# data ended early - that still counts as a complete fetch.
+sub _fetchStationPagesParallel {
+	my ( $client, $cb, $basePath, $querySuffix, $cap, $key, $count ) = @_;
+
+	my $total    = $count < $cap ? $count : $cap;
+	my $numPages = int( ( $total + STATION_PAGE_SIZE - 1 ) / STATION_PAGE_SIZE );
+
+	return _fetchStationPage( $client, $cb, $basePath, $querySuffix, $cap, $key, [], 0, Time::HiRes::time(), 0 )
+		if $numPages < 1;
+
+	$log->info("Parallel station fetch: $numPages pages for $basePath (count=$count, cap=$cap)");
+
+	my $st = {
+		client      => $client,
+		cb          => $cb,
+		basePath    => $basePath,
+		querySuffix => $querySuffix,
+		key         => $key,
+		total       => $total,
+		numPages    => $numPages,
+		nextPage    => 0,
+		pending     => 0,
+		pages       => [],
+		failed      => [],
+		retried0    => 0,
+		done        => 0,
+		startedAt   => Time::HiRes::time(),
+	};
+
+	_launchStationPages($st);
+}
+
+sub _stationPageRequest {
+	my ( $st, $i ) = @_;
+
+	my $offset = $i * STATION_PAGE_SIZE;
+	my $limit  = $st->{total} - $offset;
+	$limit = STATION_PAGE_SIZE if $limit > STATION_PAGE_SIZE;
+
+	my $path = $st->{basePath} . '?' . $st->{querySuffix} . '&limit=' . $limit . '&offset=' . $offset;
+
+	_apiGet(
+		$path,
+		sub {
+			my $data = shift;
+			if ( ref $data eq 'ARRAY' ) {
+				$st->{pages}[$i] = $data;
+			}
+			else {
+				$log->error("Unexpected station response shape for $path");
+				$st->{failed}[$i] = 1;
+			}
+			$st->{pending}--;
+			_launchStationPages($st);
+		},
+		sub {
+			my $error = shift;
+			$log->warn( "Station page $i (offset=$offset) failed for " . $st->{basePath} . ': ' . ( $error || 'error' ) );
+			$st->{failed}[$i] = 1;
+			$st->{pending}--;
+			_launchStationPages($st);
+		},
+	);
+}
+
+# Drainer: keeps up to STATION_PAGE_PARALLEL requests in flight, then hands
+# off to _finishParallel exactly once when everything has settled.
+sub _launchStationPages {
+	my $st = shift;
+
+	while ( $st->{pending} < STATION_PAGE_PARALLEL && $st->{nextPage} < $st->{numPages} ) {
+
+		if ( ( Time::HiRes::time() - $st->{startedAt} ) >= STATION_FETCH_BUDGET_SECS ) {
+			$log->warn( 'Station fetch for ' . $st->{basePath} . ' hit the ' . STATION_FETCH_BUDGET_SECS
+				. 's budget; dropping pages ' . $st->{nextPage} . '..' . ( $st->{numPages} - 1 ) );
+			$st->{failed}[$_] = 1 for $st->{nextPage} .. $st->{numPages} - 1;
+			$st->{nextPage} = $st->{numPages};
+			last;
+		}
+
+		my $i = $st->{nextPage}++;
+		$st->{pending}++;
+		_stationPageRequest( $st, $i );
+	}
+
+	_finishParallel($st) if $st->{pending} == 0 && $st->{nextPage} >= $st->{numPages};
+}
+
+sub _finishParallel {
+	my $st = shift;
+
+	# Page 0 failing alone would leave nothing to show even though the API is
+	# demonstrably up (other pages made it) - give it one more chance.
+	if ( $st->{failed}[0] && !$st->{retried0}
+		&& grep { defined $st->{pages}[$_] } 1 .. $st->{numPages} - 1 ) {
+		$log->warn( 'Retrying failed first page for ' . $st->{basePath} );
+		$st->{retried0}  = 1;
+		$st->{failed}[0] = 0;
+		$st->{pending}   = 1;
+		return _stationPageRequest( $st, 0 );
+	}
+
+	return if $st->{done}++;
+
+	# Keep only the contiguous prefix so an alphabetical list has no holes.
+	my @stations;
+	my $truncated = 0;
+	for my $i ( 0 .. $st->{numPages} - 1 ) {
+		if ( $st->{failed}[$i] ) {
+			$truncated = 1;
+			last;
+		}
+		push @stations, @{ $st->{pages}[$i] || [] };
+	}
+
+	my $anyFailed = grep { $_ } @{ $st->{failed} };
+
+	if ( $anyFailed && !@stations ) {
+		$log->error( 'Station fetch failed entirely for ' . $st->{basePath} );
+		return $st->{cb}->( _errorItems() );
+	}
+
+	if ($anyFailed) {
+		$log->warn( 'Returning partial result of ' . scalar(@stations) . ' stations for ' . $st->{basePath}
+			. ( $truncated ? ' (truncated at first failed page)' : '' ) );
+		return $st->{cb}->( _stationsFeed( $st->{client}, \@stations, 1 ) );
+	}
+
+	$cache->set( $st->{key}, \@stations, _cacheTTLSecs() );
+	$st->{cb}->( _stationsFeed( $st->{client}, \@stations, 0 ) );
+}
+
+# Sequential path (no count known, e.g. search-by-name).
+sub _fetchStationPage {
+	my ( $client, $cb, $basePath, $querySuffix, $cap, $key, $acc, $offset, $startedAt, $retried ) = @_;
+
+	my $chunkLimit = $cap - $offset;
+	$chunkLimit = STATION_PAGE_SIZE if $chunkLimit > STATION_PAGE_SIZE;
+	$chunkLimit = STATION_RETRY_LIMIT if $retried && $offset == 0 && STATION_RETRY_LIMIT < $chunkLimit;
+
+	my $path = $basePath . '?' . $querySuffix . '&limit=' . $chunkLimit . '&offset=' . $offset;
+
+	# One-shot rescue when the very first chunk fails: a smaller request has a
+	# better chance of beating the per-request timeout, and even 100 stations
+	# beats an empty menu. If it fills completely, paging resumes normally.
+	my $retryFirstChunk = sub {
+		$log->warn("First station chunk failed for $basePath; retrying once with limit=" . STATION_RETRY_LIMIT);
+		_fetchStationPage( $client, $cb, $basePath, $querySuffix, $cap, $key, [], 0, $startedAt, 1 );
+	};
+
+	_apiGet(
+		$path,
+		sub {
+			my $data = shift;
+
+			unless ( ref $data eq 'ARRAY' ) {
+				$log->error("Unexpected station response shape for $path");
+				return $cb->( _stationsFeed( $client, $acc, 1 ) ) if @$acc;
+				return $retryFirstChunk->() unless $retried;
+				return $cb->( _errorItems() );
+			}
+
+			push @$acc, @$data;
+			my $got = scalar @$data;
+
+			my $complete = $got < $chunkLimit || scalar(@$acc) >= $cap;    # end of data, or hit the cap
+			my $overBudget = ( Time::HiRes::time() - $startedAt ) >= STATION_FETCH_BUDGET_SECS;
+
+			if ( $complete || $overBudget ) {
+				if ($complete) {
+					$cache->set( $key, $acc, _cacheTTLSecs() );
+				}
+				else {
+					$log->warn( "Station fetch for $basePath hit the " . STATION_FETCH_BUDGET_SECS
+						. 's budget with ' . scalar(@$acc) . ' stations; returning partial result' );
+				}
+				return $cb->( _stationsFeed( $client, $acc, $complete ? 0 : 1 ) );
+			}
+
+			_fetchStationPage( $client, $cb, $basePath, $querySuffix, $cap, $key, $acc, $offset + $got, $startedAt, $retried );
+		},
+		sub {
+			my $error = shift;
+			if ( @$acc ) {
+				$log->warn( "Station page fetch failed at offset=$offset for $basePath ("
+					. ( $error || 'error' ) . '); returning partial result of ' . scalar(@$acc) . ' stations' );
+				return $cb->( _stationsFeed( $client, $acc, 1 ) );
+			}
+			return $retryFirstChunk->() unless $retried;
+			$log->error("Station fetch failed for $path: " . ( $error || 'error' ));
+			$cb->( _errorItems() );
+		},
+	);
+}
+
+# ----------------------------------------------------------------------------
+# Convert a Radio Browser station array into OPML audio items.
+#
+# Each station is a directly playable stream. Its url is the station's own
+# stream address (url_resolved, falling back to url), used as-is.
+#
+# We used to point url at Radio Browser's click-tracking playlist endpoint
+# /m3u/url/<uuid> instead. That endpoint's M3U always sets #EXTINF:1 (a
+# literal 1-second duration, not the standard -1 "unknown/live" convention),
+# which LMS took at face value: Now Playing showed a perpetual "0:01 / 0:01"
+# and, because the track LMS actually plays is the *resolved inner* stream
+# URL rather than our OPML item's URL, the bitrate/line2 metadata below never
+# reached the track LMS displays. Streaming directly from the station's own
+# URL avoids the M3U hop (and its bogus duration) entirely, and makes the
+# metadata below apply to the exact URL LMS plays. The click-count side
+# effect of hitting /m3u/url/<uuid> is preserved separately via an explicit
+# /json/url/<uuid> ping in _onPlaylistCmd.
+#
+# We briefly tagged the play url with a '#rb-<uuid>' fragment so the played
+# URL LMS reports back could be matched to a station. That broke playback
+# entirely: Slim::Player::Protocols::HTTP::new parses the host straight out
+# of the full URL string, fragment included, so the appended '#rb-<uuid>'
+# corrupted host/port parsing and every stream failed to open ("Couldn't
+# create socket binding to  -"). Instead, the stream url is used unmodified
+# and the uuid is recovered via an rs_url:<url> -> uuid cache entry (set
+# below, read in _onPlaylistCmd) keyed on the literal played URL. If two
+# stations share the exact same stream url the later one wins that cache
+# entry - an acceptable edge case next to a plugin that couldn't play any
+# station at all.
+#
+# IMPORTANT: url must be a plain STRING for the item to appear as a playable
+# stream. A code reference here would make LMS render the station as a
+# browsable folder instead of a track.
+#
+# Bitrate / codec / country are shown on line2 so the metadata is visible
+# without an extra navigation step.
+# ----------------------------------------------------------------------------
+
+sub _stationsToOpml {
+	my ( $client, $stations ) = @_;
+
+	my @items;
+
+	for my $s ( sort { _compareNames($a, $b) } @{ $stations || [] } ) {
+		next unless $s->{stationuuid} && $s->{name};
+		next if _hideBroken() && defined $s->{lastcheckok} && $s->{lastcheckok} == 0;    # skip broken
+
+		my $stream_url = $s->{url_resolved} || $s->{url};
+		next unless $stream_url;    # nothing playable
+
+		my @meta;
+		push @meta, $s->{bitrate} . 'k' if $s->{bitrate};
+		push @meta, uc $s->{codec}      if $s->{codec};
+		push @meta, $s->{countrycode}   if $s->{countrycode};
+		my $line2 = join( " \x{00B7} ", @meta );    # space-middot-space separator
+
+		$stream_url =~ s/#.*$//;    # drop any pre-existing fragment; LMS chokes on one (see above)
+		$cache->set( 'rs_url:' . $stream_url, $s->{stationuuid}, META_TTL );
+		Plugins::RadioStations::Artwork::remember($stream_url,$s->{favicon});
+
+		push @items, {
+			name      => $s->{name},
+			line1     => $s->{name},
+			line2     => $line2,
+			type      => 'audio',
+			# Direct, unmodified stream URL. Plays are captured separately via a
+			# playlist-command observer that looks the played URL up in the
+			# rs_url: cache set just above (see _onPlaylistCmd).
+			url       => $stream_url,
+			# Fall back to the plugin's bundled icon so grid tiles aren't blank
+			# (and drop malformed favicon values that would render broken).
+			image     => ( $s->{favicon} && $s->{favicon} =~ m{^https?://} )
+			             ? $s->{favicon}
+			             : 'plugins/RadioStations/html/images/icon.png',
+			# kbps, NOT bps: setRemoteMetadata() multiplies by 1000 itself.
+			# Must be non-zero: with no track bitrate, LMS's elapsed-time
+			# estimation (StreamingController::playingSongElapsed) gets a
+			# byterate of 0 and falls back to "now - remoteStreamStartTime",
+			# which renders as a huge epoch-sized elapsed time (~495k hours)
+			# on live radio in sync/rebuffer states.
+			bitrate   => $s->{bitrate} || 128,
+			on_select => 'play',    # explicit play-on-select hint
+			playall   => 1,
+		};
+	}
+
+	return @items ? \@items : [ { name => cstring( $client, 'PLUGIN_RADIOSTATIONS_NONE' ), type => 'text' } ];
+}
+
+# ----------------------------------------------------------------------------
+# Wrap a station list in a feed result that asks grid-capable UIs (Material
+# skin, controller apps) to render the stations as large artwork tiles instead
+# of a one-line text list. menuStyle 'album' + windowStyle 'icon_list' is the
+# documented SlimBrowse hint (see slimbrowse.md <window_fields>).
+# ----------------------------------------------------------------------------
+
+sub _stationsFeed {
+	my ( $client, $stations, $partial ) = @_;
+
+	# Feed building runs on the single-threaded event loop, so log how long it
+	# takes: a slow render here stalls the whole server and is otherwise
+	# invisible in the logs (it looks like a client-side timeout).
+	my $t0    = Time::HiRes::time();
+	my $items = _stationsToOpml( $client, $stations );
+	$log->info( sprintf( 'Built feed of %d stations in %.2fs',
+		scalar @{ $stations || [] }, Time::HiRes::time() - $t0 ) );
+
+	# Flag a truncated fetch (see _fetchStationPage) so the user knows the list
+	# may be incomplete rather than assuming it's the full result. Carries an
+	# image so grid-capable skins keep rendering large artwork tiles (they fall
+	# back to a plain list as soon as one item lacks artwork).
+	if ( $partial && @$stations ) {
+		unshift @$items, {
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_PARTIAL' ),
+			type  => 'text',
+			image => 'plugins/RadioStations/html/images/icon.png',
+		};
+	}
+
+	return _alphabeticFeed({
+		items  => $items,
+		window => {
+			menuStyle   => 'album',
+			windowStyle => 'icon_list',
+		},
+	});
+}
+
+# ----------------------------------------------------------------------------
+# Recently Played
+#
+# A locally stored, server-wide history of the last _recentCount() stations the
+# user actually played. Plays are captured passively by _onPlaylistCmd, which
+# observes playlist commands and looks the played URL up in the rs_url:
+# cache (populated by _stationsToOpml) to recover the station uuid. The list
+# lives in the 'recent' pref so it survives server restarts.
+# ----------------------------------------------------------------------------
+
+# Observer for playlist play/load/add/insert commands. Pulls the played URL from
+# the request, recovers the station uuid via the rs_url:<url> cache entry set
+# in _stationsToOpml, records a Recently Played entry, and pings Radio
+# Browser's click-count endpoint (the stream URL no longer routes through
+# /m3u/url/<uuid>, so that side effect has to be triggered explicitly).
+# Passive: it never changes playback, and never dies (a failure here must not
+# disrupt the user's play action).
+sub _onPlaylistCmd {
+	my $request = shift;
+	return unless $request;
+
+	eval {
+		# For playlist play/load/add/insert the played URL is the '_item' param.
+		my $url = $request->getParam('_item');
+		Plugins::RadioStations::Artwork::seed($url,Plugins::RadioStations::Artwork::logo($url)) if defined $url;
+		if ( defined $url && ( my $uuid = $cache->get( 'rs_url:' . $url ) ) ) {
+			recordRecent($uuid);
+			_apiGet( '/json/url/' . _uri($uuid), sub {}, sub {} );    # fire-and-forget click count
+		}
+	};
+	$log->debug("Radio Browser: recent-capture error: $@") if $@;
+}
+
+# Top-level menu handler: render the stored history newest-first, with a Clear
+# action on top. Stored entries are already station-shaped, so they flow back
+# through the same rendering/playback path as every other station list.
+sub recentStations {
+	my ( $client, $cb, $args ) = @_;
+	$cb = _alphabeticCallback($cb);
+
+	my $list = $prefs->get('recent') || [];
+	@$list = @$list[ 0 .. _recentCount() - 1 ] if @$list > _recentCount();    # truncate on read
+
+	my $items = _stationsToOpml( $client, $list );
+
+	# Offer a Clear action only when there is real history (not the NONE item).
+	# It carries an image so the grid-capable skins keep rendering large artwork
+	# tiles: they fall back to a plain list as soon as one item lacks artwork.
+	if ( @$list ) {
+		unshift @$items, {
+			name  => cstring( $client, 'PLUGIN_RADIOSTATIONS_CLEAR_RECENT' ),
+			textkey => ' ',
+			type  => 'link',
+			image => 'plugins/RadioStations/html/images/icon.png',
+			url   => sub {
+				my ( $c, $cb2 ) = @_;
+				$prefs->set( 'recent', [] );
+				recentStations( $c, $cb2 );
+			},
+		};
+	}
+
+	$cb->( {
+		items  => $items,
+		window => { menuStyle => 'album', windowStyle => 'icon_list' },
+	} );
+}
+
+# Record a play (by uuid) in the recent list. Metadata is resolved lazily at
+# play time: from the rs_meta cache when this station was played before,
+# otherwise via one async /json/stations/byuuid lookup. (It used to be
+# pre-cached for every station at browse time, but 5000 synchronous cache
+# writes per menu render stalled the whole event loop on slow storage.)
+sub recordRecent {
+	my $uuid = shift or return;
+
+	if ( my $meta = $cache->get( 'rs_meta:' . $uuid ) ) {
+		return _pushRecent($meta);
+	}
+
+	_apiGet(
+		'/json/stations/byuuid/' . _uri($uuid),
+		sub {
+			my $data = shift;
+			my $s = ( ref $data eq 'ARRAY' ) ? $data->[0] : undef;
+
+			my $meta = ( $s && $s->{stationuuid} )
+				? _recentHash($s)
+				: { stationuuid => $uuid, name => $uuid };
+
+			$cache->set( 'rs_meta:' . $uuid, $meta, META_TTL );
+			_pushRecent($meta);
+		},
+		sub {
+			# Record the play anyway; the uuid-only entry is better than losing it.
+			_pushRecent( { stationuuid => $uuid, name => $uuid } );
+		},
+	);
+}
+
+# Push a station entry onto the front of the recent list: dedupe by uuid so a
+# re-play moves it to the top, then cap at _recentCount(). The LMS event loop
+# is single-threaded so the read-modify-write needs no locking.
+sub _pushRecent {
+	my $meta = shift or return;
+
+	my $list = $prefs->get('recent') || [];
+	@$list = grep { ( $_->{stationuuid} || '' ) ne $meta->{stationuuid} } @$list;    # dedupe
+	unshift @$list, $meta;                                                           # newest first
+
+	my $cap = _recentCount();
+	@$list = @$list[ 0 .. $cap - 1 ] if @$list > $cap;               # cap on write
+
+	$prefs->set( 'recent', $list );
+}
+
+# Minimal, YAML-safe station shape stored in the recent list and the uuid cache.
+# lastcheckok is kept so the hideBroken filter in _stationsToOpml still applies.
+sub _recentHash {
+	my $s = shift;
+	return {
+		stationuuid => $s->{stationuuid},
+		name        => $s->{name},
+		bitrate     => $s->{bitrate},
+		codec       => $s->{codec},
+		countrycode => $s->{countrycode},
+		favicon     => $s->{favicon},
+		lastcheckok => $s->{lastcheckok},
+	};
+}
+
+# Max stations remembered in Recently Played (settings-configurable, safe default).
+sub _recentCount {
+	my $n = $prefs->get('recentCount');
+	return ( $n && $n =~ /^\d+$/ && $n > 0 ) ? $n : DEFAULT_RECENT_COUNT;
+}
+
+# ----------------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------------
+
+# Percent-encode a path/query component for the API URL.
+sub _alphabeticCallback {
+	my ($cb) = @_;
+	return sub { $cb->(_alphabeticFeed(shift)); };
+}
+
+# LMS expects [initial, number of consecutive items] and a matching textkey
+# on each item. Include action rows in the offsets, under a blank index key.
+sub _alphabeticFeed {
+	my ($feed) = @_;
+	my @index;
+	for my $item (@{ $feed->{items} || [] }) {
+		my $key = ($item->{textkey} || '') eq ' ' || ($item->{type} || '') =~ /^(?:text|search)$/
+			? ' ' : uc(substr(_nameSortKey($item->{name}), 0, 1));
+		$key = '0-9' if $key =~ /^[0-9]$/;
+		$key = ' ' unless length $key;
+		$item->{textkey} = $key;
+		if (@index && $index[-1][0] eq $key) { $index[-1][1]++; }
+		else { push @index, [$key, 1]; }
+	}
+	$feed->{indexList} = \@index if @index;
+	return $feed;
+}
+
+sub _nameSortKey {
+	my $name = lc(shift || '');
+	$name = NFD($name);
+	$name =~ s/\pM//g;
+	$name =~ s/\x{00df}/ss/g;
+	$name =~ s/^\s+|\s+$//g;
+	return $name;
+}
+
+sub _compareNames {
+	my ($left, $right) = @_;
+	return _nameSortKey($left->{name}) cmp _nameSortKey($right->{name})
+		|| ($left->{name} || '') cmp ($right->{name} || '')
+		|| ($left->{stationuuid} || '') cmp ($right->{stationuuid} || '');
+}
+
+sub _uri {
+	my $s = shift;
+	$s = '' unless defined $s;
+	return uri_escape_utf8($s);
+}
+
+# Max stations to request per query (settings-configurable, with a safe default).
+sub _maxResults {
+	my $n = $prefs->get('maxResults');
+	return ( $n && $n =~ /^\d+$/ && $n > 0 ) ? $n : DEFAULT_MAX_RESULTS;
+}
+
+# Max stations to request for the global Most Voted / Most Played charts. These
+# are inherently "top N" lists, so this is kept small by default (settings-
+# configurable): requesting the full directory here just blocks rendering.
+sub _topResults {
+	my $n = $prefs->get('topResults');
+	return ( $n && $n =~ /^\d+$/ && $n > 0 ) ? $n : DEFAULT_TOP_RESULTS;
+}
+
+# Max tags to show in the Tags browse list (settings-configurable, with a safe default).
+sub _maxTags {
+	my $n = $prefs->get('maxTags');
+	return ( $n && $n =~ /^\d+$/ && $n > 0 ) ? $n : DEFAULT_MAX_TAGS;
+}
+
+# Whether to hide stations that failed Radio Browser's last reachability check.
+# Defaults to on so broken streams stay out of the listings unless the user opts
+# in to showing them via the settings page.
+sub _hideBroken {
+	my $v = $prefs->get('hideBroken');
+	return defined $v ? $v : 1;
+}
+
+# Query fragment appended to an existing '?...'-style query string to ask the API
+# to omit broken stations. Empty when the user has chosen to show them.
+sub _brokenSuffix {
+	return _hideBroken() ? '&hidebroken=true' : '';
+}
+
+# Which top-level LMS menu the plugin registers under: 'radios' (default, the
+# Radio menu) or 'apps' (the Apps/My Apps menu). Read once at initPlugin.
+sub _menuLocation {
+	my $v = $prefs->get('menuLocation');
+	return ( defined $v && $v eq 'apps' ) ? 'apps' : 'radios';
+}
+
+# Station-result cache lifetime in seconds (pref stored in minutes).
+sub _cacheTTLSecs {
+	my $m = $prefs->get('cacheTTL');
+	$m = ( $m && $m =~ /^\d+$/ && $m > 0 ) ? $m : DEFAULT_CACHE_TTL_MIN;
+	return $m * 60;
+}
+
+# ----------------------------------------------------------------------------
+# Country detection / resolution
+# ----------------------------------------------------------------------------
+
+# Return the active ( $code, $name ) for "local" content: the manual override
+# pref if set, otherwise the auto-detected country. Empty list when unknown.
+sub _activeCountry {
+	my $override = $prefs->get('countryOverride');
+	if ( defined $override && $override =~ /^\s*([A-Za-z]{2})\s*$/ ) {
+		my $code = uc $1;
+		return ( $code, _countryName($code) );
+	}
+
+	my $geo = $cache->get('radiostations_geo');
+	if ( $geo && $geo->{code} ) {
+		return ( $geo->{code}, $geo->{name} || _countryName( $geo->{code} ) );
+	}
+
+	return ();
+}
+
+# Map an ISO 3166-1 alpha-2 code to a display name using the cached countries
+# list (populated by listCountries); fall back to the bare code.
+sub _countryName {
+	my $code = uc( shift || '' );
+	return $code unless $code;
+
+	my $countries = $cache->get('radiostations_countries');
+	for my $c ( @{ $countries || [] } ) {
+		return $c->{name} if $c->{name} && uc( $c->{iso_3166_1} || '' ) eq $code;
+	}
+	return $code;
+}
+
+# Kick off async geo-IP detection unless an override is set or we already have a
+# cached result. Fire-and-forget: results land in the cache for later menus.
+sub _maybeDetectCountry {
+	return if $prefs->get('countryOverride');      # override wins; no lookup
+	return if $cache->get('radiostations_geo');     # already known
+
+	# Try each geo-IP provider in order until one returns a 2-letter country
+	# code, then cache { code, name }. All failures are logged and swallowed so
+	# the menu never depends on this succeeding.
+	my @providers = GEO_PROVIDERS;
+	_tryGeoProvider( \@providers );
+}
+
+sub _tryGeoProvider {
+	my ( $providers ) = @_;
+
+	my $p = shift @$providers;
+	unless ( $p ) {
+		$log->warn('country auto-detect failed: all geo-IP providers exhausted');
+		return;
+	}
+
+	my %apiHeaders = Slim::Utils::Misc->can('apiHeaders') ? Slim::Utils::Misc::apiHeaders(__PACKAGE__) : ('X-LMS-Plugin-ID' => __PACKAGE__);
+
+	Slim::Networking::SimpleAsyncHTTP->new(
+		sub {
+			my $http = shift;
+			my $data = eval { JSON::XS::decode_json( $http->content ) };
+
+			my $code = $data && $data->{ $p->{code} };
+			if ( $code && $code =~ /^[A-Za-z]{2}$/ ) {
+				$code = uc $code;
+				my $name = ( $p->{name} && $data->{ $p->{name} } ) || _countryName($code);
+				$cache->set( 'radiostations_geo', { code => $code, name => $name }, GEO_TTL );
+				$log->info("country auto-detected: $code ($name) via $p->{url}");
+				return;
+			}
+
+			$log->debug("geo-IP $p->{url} returned no usable country; trying next");
+			_tryGeoProvider($providers);
+		},
+		sub {
+			my ( $http, $error ) = @_;
+			$log->debug("geo-IP $p->{url} failed: " . ( $error || 'unknown' ) . '; trying next');
+			_tryGeoProvider($providers);
+		},
+		{ timeout => 10 },
+	)->get( $p->{url}, 'User-Agent' => USER_AGENT, %apiHeaders );
+}
+
+1;
+
+
+
+
+
+
+

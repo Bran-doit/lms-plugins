@@ -1,0 +1,13 @@
+Radio Stations 0.8.0 and later includes the GPL-2.0-only LMS Favorites editor.
+The combined distribution is provided under GNU GPL version 2; see
+LICENSE-GPL-2.0.txt. Original Radio Browser components retain their MIT
+copyright notice in LICENSE-MIT.txt.
+
+NativeEditor.pm and editor/html/favorites.js, editor/html/Favorites.js:
+Derived from Lyrion Music Server 9.0.3 Favorites.
+Logitech Media Server Copyright 2005-2024 Logitech.
+Lyrion Music Server Copyright 2024 Lyrion Community.
+The installed LMS Favorites template is reused at runtime.
+Source: Slim/Plugin/Favorites in https://github.com/LMS-Community/slimserver
+Changes: isolated radio store, session handling, radio endpoint routing,
+flat-list restrictions and persistence validation.

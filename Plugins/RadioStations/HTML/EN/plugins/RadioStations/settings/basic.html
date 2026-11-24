@@ -1,0 +1,102 @@
+[% PROCESS settings/header.html %]
+<style>
+.rs-table {width:100%;border-collapse:collapse;margin:12px 0}
+.rs-table th,.rs-table td {padding:7px 6px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}
+.rs-arrows {white-space:nowrap;width:64px}.rs-arrows button {padding:2px 7px}
+.rs-pending {accent-color:#1677d2}.rs-stored {accent-color:#777;filter:grayscale(1)}
+.rs-url {display:block;max-width:650px;overflow-wrap:anywhere;color:#666;font-size:11px}
+.rs-add {display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:12px 0}
+.rs-add label {display:flex;flex-direction:column;gap:3px}.rs-add input {min-width:230px}
+</style>
+<div class="settingGroup">
+ <div class="settingSubGroup">
+  <input type="hidden" name="pref_autoDetectRadio" value="0">
+  <label><input type="checkbox" name="pref_autoDetectRadio" id="pref_autoDetectRadio" value="1"[% IF prefs.autoDetectRadio %] checked="checked"[% END %]> [% "PLUGIN_RADIOSTATIONS_AUTO" | string %]</label>
+  <div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_AUTO_DESC" | string %]</div>
+ </div>
+ <div class="settingSubGroup">
+  <input type="hidden" name="pref_moveRadioFavorites" value="0">
+  <label><input type="checkbox" name="pref_moveRadioFavorites" id="pref_moveRadioFavorites" value="1"[% IF prefs.moveRadioFavorites %] checked="checked"[% END %]> [% "PLUGIN_RADIOSTATIONS_MOVE" | string %]</label>
+  <div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_MOVE_DESC" | string %]</div>
+ </div>
+[% PROCESS plugins/RadioStations/table.html %]
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_COUNTRY" | string %]</div>
+		<input type="text" name="pref_countryOverride" id="pref_countryOverride"
+		       value="[% prefs.countryOverride | html %]" size="6" maxlength="2">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_COUNTRY_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MAXRESULTS" | string %]</div>
+		<input type="number" min="1" max="100000" step="1"
+		       name="pref_maxResults" id="pref_maxResults"
+		       value="[% prefs.maxResults | html %]" size="8">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MAXRESULTS_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_TOPRESULTS" | string %]</div>
+		<input type="number" min="1" max="10000" step="1"
+		       name="pref_topResults" id="pref_topResults"
+		       value="[% prefs.topResults | html %]" size="8">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_TOPRESULTS_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MAXTAGS" | string %]</div>
+		<input type="number" min="1" max="10000" step="1"
+		       name="pref_maxTags" id="pref_maxTags"
+		       value="[% prefs.maxTags | html %]" size="8">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MAXTAGS_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_RECENTCOUNT" | string %]</div>
+		<input type="number" min="1" max="1000" step="1"
+		       name="pref_recentCount" id="pref_recentCount"
+		       value="[% prefs.recentCount | html %]" size="8">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_RECENTCOUNT_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_CACHETTL" | string %]</div>
+		<input type="number" min="1" max="10080" step="1"
+		       name="pref_cacheTTL" id="pref_cacheTTL"
+		       value="[% prefs.cacheTTL | html %]" size="8">
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_CACHETTL_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<input type="hidden" name="pref_radioFavorites" value="0">
+		<label for="pref_radioFavorites" style="display:flex;align-items:center;gap:6px">
+			<input type="checkbox" name="pref_radioFavorites" id="pref_radioFavorites"
+			       value="1"[% IF prefs.radioFavorites %] checked="checked"[% END %]>
+			<span>[% "PLUGIN_RADIOSTATIONS_SETTINGS_FAVORITES" | string %]</span>
+		</label>
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_FAVORITES_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<input type="hidden" name="pref_hideBroken" value="0">
+		<label for="pref_hideBroken" style="display:flex;align-items:center;gap:6px">
+			<input type="checkbox" name="pref_hideBroken" id="pref_hideBroken"
+			       value="1"[% IF prefs.hideBroken %] checked="checked"[% END %]>
+			<span>[% "PLUGIN_RADIOSTATIONS_SETTINGS_HIDEBROKEN" | string %]</span>
+		</label>
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_HIDEBROKEN_DESC" | string %]</div>
+	</div>
+
+	<div class="settingSubGroup">
+		<div class="prefName">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION" | string %]</div>
+		<select name="pref_menuLocation" id="pref_menuLocation">
+			<option value="radios"[% IF prefs.menuLocation != "apps" %] selected="selected"[% END %]>[% "PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_RADIO" | string %]</option>
+			<option value="apps"[% IF prefs.menuLocation == "apps" %] selected="selected"[% END %]>[% "PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_APPS" | string %]</option>
+		</select>
+		<div class="prefDesc">[% "PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_DESC" | string %]</div>
+	</div>
+</div>
+
+[% PROCESS settings/footer.html %]
+

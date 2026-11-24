@@ -76,7 +76,7 @@ def build(repository):
         for child in extension:
             if child.tag in {"title", "desc", "creator"}:
                 entry.append(copy.deepcopy(child))
-        ET.SubElement(entry, "category").text = "information"
+        ET.SubElement(entry, "category").text = "radio" if name == "RadioStations" else "information"
         ET.SubElement(entry, "link").text = f"https://github.com/{repository}"
         ET.SubElement(entry, "url").text = f"https://github.com/{repository}/releases/download/{tag}/{archive.name}"
         ET.SubElement(entry, "sha").text = hashlib.sha1(archive.read_bytes()).hexdigest()
@@ -89,6 +89,18 @@ def build(repository):
     return packages, index_path
 
 
+def release_notes(tag):
+    name, version = tag.rsplit("-v", 1)
+    changelog = ROOT / "Plugins" / name / "CHANGELOG.md"
+    if changelog.exists():
+        sections = re.split(r"(?m)^## ", changelog.read_text(encoding="utf-8"))
+        for section in sections[1:]:
+            heading, _, body = section.partition("\n")
+            if heading.strip() == version:
+                return body.strip()
+    return "Automatically built from the plugin source. See the plugin README for requirements."
+
+
 def publish(repository, packages, index_path):
     prefix = f"repos/{repository}"
     for tag, archive in packages:
@@ -97,7 +109,7 @@ def publish(repository, packages, index_path):
             release = api(f"{prefix}/releases", "POST", {
                 "tag_name": tag, "target_commitish": os.environ["GITHUB_SHA"],
                 "name": tag, "draft": True,
-                "body": "Automatically built from the plugin source. See the plugin README for requirements."})
+                "body": release_notes(tag)})
         assets = api(f"{prefix}/releases/{release['id']}/assets?per_page=100")
         asset = next((a for a in assets if a["name"] == archive.name), None)
         if asset:

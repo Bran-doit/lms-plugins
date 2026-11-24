@@ -1,0 +1,21 @@
+Radio Stations 0.5.0: automatische Radio-Erkennung und gesicherte Übernahme, manuelle Sender, Hoch/Runter-Reihenfolge und A-Z-Rücksetzung. Siehe README.txt.
+
+0.6.0: Gemeinsame Tabelle mit grauen gespeicherten und blauen vorausgewählten Einträgen; Erkennung ohne automatisches Verschieben; Übernehmen, Pfeilsortierung, URL-/Namensfelder und sichere Migration des alten Mehrzeilenfelds.
+
+0.7.0: Eigene Player-Webansicht mit Bearbeitungsmodus; gemeinsame Tabelle und Verarbeitung für Einstellungen und Player; Name/URL ändern, löschen, sortieren und übernehmen. Native CSRF-Sicherung der Webroute.
+
+0.7.1: Kopieren als Standard für Übernehmen; optional Verschieben per Häkchen unter automatischer Erkennung. Gemeinsame Einstellung für Player und Konfiguration; Zurück zu Favoriten vermeidet Duplikate bei kopierten Sendern.
+
+0.7.2: Native LMS-Cover-Anbindung für gespeicherte und Radio-Browser-Senderlogos; vorhandene Cover bleiben vorrangig; Fallback auch für aufgelöste Streams. Keine Ersetzung von Protokoll- oder Metadaten-Providern.
+
+0.7.3: Native LMS-Breadcrumbs und expliziter GET-Rückweg aus dem Player-Editor, Hauptmenü-Link, keine verschachtelte mainbody-Scrollfläche. Einzelne Sender per Bearbeiten öffnen, Speichern oder Abbrechen schließt Eingabefelder. Rücknavigation verwirft Aktionsparameter.
+
+Bearbeiten-Buttons: Native LMS-editlink-Komponente statt eigenem Textbutton; dasselbe Skin-Stiftsymbol wie bei Favoriten, auch pro Sender.
+
+0.8.0: Originales installiertes LMS-Favoritentemplate, native Editoraktionen und AJAX/Drag-and-drop mit isoliertem Radio-Speicheradapter. Keine Änderungen an LMS-Kerndateien oder allgemeinen Favoriten. Validierung und Konfliktschutz; eigene Editorsitzungen; eigene Endpunkte für beide Skin-JavaScripts.
+
+0.8.1: Radio-Favoriten verwenden wieder den nativen LMS-XMLBrowser mit Standard-Ansichtswahl und Artwork. Separater nativer Stift in der Kopfzeile öffnet den Favoriteneditor. Hauptmenü-Templates bleiben unverändert.
+
+0.9.0: Einmalige automatische Übernahme mit Kopieren/Verschieben und dauerhaftem Schleifenschutz. Rückverschiebung und Abschalten werden auch nach asynchroner Erkennung geprüft. Manuelle Links sofort speichern. Übernehmen- und A-Z-Buttons entfernt.
+
+Konfiguration: 40-px-Senderlogos vor den Namen in der Sendertabelle, über LMS-Bildskalierung; Ersatzgrafik bei fehlendem oder nicht ladbarem Logo.

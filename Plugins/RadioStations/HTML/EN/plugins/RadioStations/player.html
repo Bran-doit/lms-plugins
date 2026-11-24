@@ -1,0 +1,44 @@
+[% pagetitle = 'PLUGIN_RADIOSTATIONS_FAVORITES' | string %]
+[% PROCESS pageheader.html %]
+<div class="rs-player" style="padding:12px">
+<nav class="rs-navigation" aria-label="[% 'PLUGIN_RADIOSTATIONS_NAVIGATION' | string %]">
+[% IF radioEditing %]<a id="rs-back" target="_self" href="[% radioBrowseUrl %]">&#8592; [% 'PLUGIN_RADIOSTATIONS_BACK' | string %]</a>[% END %]
+<a target="_self" href="[% webroot %]home.html?player=[% player | uri %]">[% 'HOME' | string %]</a>
+</nav>
+<form method="post" action="[% webroot %]plugins/radiostationsfavorites/index.html">
+<input type="hidden" name="player" value="[% player | html %]">
+<input type="hidden" name="pageAntiCSRFToken" value="[% pageAntiCSRFToken | html %]">
+[% IF radioEditing %]
+<input type="hidden" name="radioEditing" value="1">
+[% IF radioEditId %]<input type="hidden" name="radioEditId" value="[% radioEditId | html %]">[% END %]
+[% PROCESS plugins/RadioStations/table.html %]
+<p><a target="_self" href="[% radioBrowseUrl %]">&#8592; [% 'PLUGIN_RADIOSTATIONS_BACK' | string %]</a></p>
+[% ELSE %]
+<div style="text-align:right">
+[% WRAPPER editlink noTarget=1 %]href="[% webroot %]plugins/RadioStations/editor/index.html?player=[% player | uri %]" target="_self"[% END %]
+</div>
+[% IF radioTransferError %]<p role="alert">[% radioTransferError | html %]</p>[% END %]
+<ul style="list-style:none;padding:0">
+[% FOREACH station IN radioStations %]
+<li style="padding:8px;border-bottom:1px solid #bbb">
+<button type="submit" name="radioPlay" value="[% station.id %]" title="[% 'PLAY' | string %]">&#9654;</button>
+[% IF station.image %]<img src="[% station.image | html %]" width="32" height="32" style="vertical-align:middle" alt="">[% END %]
+[% station.name | html %]
+</li>
+[% END %]
+</ul>
+[% UNLESS radioStations.size %]<p>[% 'PLUGIN_RADIOSTATIONS_FAVORITES_EMPTY' | string %]</p>[% END %]
+[% END %]
+</form>
+</div>
+[% PROCESS pagefooter.html %]
+<style>
+.rs-table {width:100%;border-collapse:collapse;margin:12px 0}
+.rs-table th,.rs-table td {padding:7px 6px;border-bottom:1px solid #ddd;text-align:left;vertical-align:middle}
+.rs-arrows {white-space:nowrap;width:64px}.rs-arrows button {padding:2px 7px}
+.rs-pending {accent-color:#1677d2}.rs-stored {accent-color:#777;filter:grayscale(1)}
+.rs-url {display:block;max-width:650px;overflow-wrap:anywhere;color:#666;font-size:11px}
+.rs-add {display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin:12px 0}
+.rs-add label {display:flex;flex-direction:column;gap:3px}.rs-add input {min-width:230px}
+.rs-navigation {display:flex;gap:20px;padding:10px 0;margin-bottom:12px;border-bottom:1px solid #aaa}
+</style>

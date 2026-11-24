@@ -1,0 +1,370 @@
+# String tokens for the Radio Browser plugin.
+# Lyrion looks up these tokens (via Slim::Utils::Strings) to render localized
+# UI labels. English and German are provided; add other languages by
+# appending indented "<LANG>\t<text>" lines under each token.
+
+PLUGIN_RADIOSTATIONS
+	EN	Radio Stations
+	DE	Radio Stations
+
+PLUGIN_RADIOSTATIONS_AUTO
+	EN	Automatically recognize radio favorites
+	DE	Radio-Favoriten automatisch erkennen
+
+PLUGIN_RADIOSTATIONS_AUTO_DESC
+	EN	New recognized radio favorites are automatically copied or moved according to the setting below. Each station is imported once. Manually restored stations are excluded. Public stream URLs may be queried at Radio Browser; no audio is downloaded.
+	DE	Neu erkannte Radio-Favoriten werden automatisch gemäß der folgenden Einstellung kopiert oder verschoben. Jeder Sender wird nur einmal übernommen. Manuell zurückgeschobene Sender sind ausgeschlossen. Öffentliche Stream-Adressen können bei Radio Browser abgefragt werden; es werden keine Audiodaten heruntergeladen.
+
+PLUGIN_RADIOSTATIONS_TABLE
+	EN	Radio stations and favorites
+	DE	Radiosender und Favoriten
+
+PLUGIN_RADIOSTATIONS_TABLE_DESC
+	EN	Gray check: saved radio station. New recognized stations are imported automatically once. Use arrows to change order. Add saves a manual station immediately; without a name its URL is displayed.
+	DE	Graues Häkchen: gespeicherter Radiosender. Neu erkannte Sender werden einmalig automatisch übernommen. Mit den Pfeilen die Reihenfolge ändern. Hinzufügen speichert manuelle Sender direkt; ohne Namen wird die URL angezeigt.
+
+PLUGIN_RADIOSTATIONS_TABLE_STATUS
+	EN	Status
+	DE	Status
+
+PLUGIN_RADIOSTATIONS_TABLE_STATION
+	EN	Station
+	DE	Sender
+
+PLUGIN_RADIOSTATIONS_STORED
+	EN	Saved
+	DE	Übernommen
+
+PLUGIN_RADIOSTATIONS_PENDING
+	EN	New
+	DE	Neu
+
+PLUGIN_RADIOSTATIONS_NEW_URL
+	EN	Stream URL
+	DE	Stream-URL
+
+PLUGIN_RADIOSTATIONS_NEW_NAME
+	EN	Station name (optional)
+	DE	Sendername (optional)
+
+PLUGIN_RADIOSTATIONS_ADD
+	EN	Add
+	DE	Hinzufügen
+
+PLUGIN_RADIOSTATIONS_ADD_ERROR
+	EN	Enter one valid HTTP or HTTPS stream URL.
+	DE	Bitte genau eine gültige HTTP- oder HTTPS-Stream-URL eingeben.
+
+PLUGIN_RADIOSTATIONS_APPLY
+	EN	Apply
+	DE	Übernehmen
+
+PLUGIN_RADIOSTATIONS_RESTORE_ROW
+	EN	Back to Favorites
+	DE	Zurück zu Favoriten
+
+PLUGIN_RADIOSTATIONS_DISCARD
+	EN	Discard
+	DE	Verwerfen
+
+PLUGIN_RADIOSTATIONS_ORDER
+	EN	Order of Radio Favorites
+	DE	Reihenfolge der Radio-Favoriten
+
+PLUGIN_RADIOSTATIONS_ORDER_DESC
+	EN	Move manual and imported stations together using Up/Down. The first move switches to manual order; new entries are appended. Changes are saved immediately. Other station lists remain alphabetical.
+	DE	Manuelle und übernommene Sender gemeinsam mit Hoch/Runter verschieben. Die erste Verschiebung aktiviert die manuelle Reihenfolge; neue Einträge werden hinten angefügt. Änderungen werden sofort gespeichert. Andere Senderlisten bleiben alphabetisch.
+
+PLUGIN_RADIOSTATIONS_ORDER_MANUAL
+	EN	Manual order active
+	DE	Manuelle Reihenfolge aktiv
+
+PLUGIN_RADIOSTATIONS_ORDER_ALPHA
+	EN	Alphabetical order active
+	DE	Alphabetische Reihenfolge aktiv
+
+PLUGIN_RADIOSTATIONS_ORDER_RESET
+	EN	Sort alphabetically (A–Z)
+	DE	Alphabetisch sortieren (A–Z)
+
+PLUGIN_RADIOSTATIONS_UP
+	EN	Up
+	DE	Hoch
+
+PLUGIN_RADIOSTATIONS_DOWN
+	EN	Down
+	DE	Runter
+
+PLUGIN_RADIOSTATIONS_DETECT_PENDING
+	EN	Not checked yet
+	DE	Noch nicht geprüft
+
+PLUGIN_RADIOSTATIONS_DETECT_UNKNOWN
+	EN	Uncertain – select manually if this is radio
+	DE	Unklar – bei Radio manuell auswählen
+
+PLUGIN_RADIOSTATIONS_DETECT_PODCAST
+	EN	Podcast/feed indication – not transferred automatically
+	DE	Podcast-/Feed-Hinweis – keine automatische Übernahme
+
+PLUGIN_RADIOSTATIONS_DETECT_RADIO
+	EN	Radio recognized
+	DE	Radio erkannt
+
+PLUGIN_RADIOSTATIONS_DETECT_EXCLUDED
+	EN	Kept in general Favorites by your choice
+	DE	Auf Wunsch in den allgemeinen Favoriten belassen
+
+PLUGIN_RADIOSTATIONS_TRANSFER
+	EN	Move radio stations from LMS Favorites
+	DE	Radiosender aus den LMS-Favoriten übernehmen
+
+PLUGIN_RADIOSTATIONS_TRANSFER_DESC
+	EN	Select radio stations below. Audio links may also be podcasts; only select stations you want to move. Selected entries are backed up, saved separately with their logos and then removed from LMS Favorites. Radio Favorites is enabled automatically. Repeat for new favorites from any plugin.
+	DE	Unten die gewünschten Radiosender auswählen. Audio-Links können auch Podcasts sein; nur die zu übernehmenden Sender markieren. Die Auswahl wird gesichert, mit Senderlogos separat gespeichert und danach aus den LMS-Favoriten entfernt. Radio Favoriten wird automatisch aktiviert. Für neue Favoriten aus beliebigen Plugins die Übernahme erneut ausführen.
+
+PLUGIN_RADIOSTATIONS_TRANSFER_COUNT
+	EN	Entries processed:
+	DE	Bearbeitete Einträge:
+
+PLUGIN_RADIOSTATIONS_RADIO_RECOGNIZED
+	EN	Recognized as radio
+	DE	Als Radio erkannt
+
+PLUGIN_RADIOSTATIONS_TRANSFER_MOVE
+	EN	Move selected stations to Radio Favorites
+	DE	Ausgewählte Sender nach Radio Favoriten verschieben
+
+PLUGIN_RADIOSTATIONS_TRANSFER_STORED
+	EN	Separately stored radio favorites
+	DE	Separat gespeicherte Radio-Favoriten
+
+PLUGIN_RADIOSTATIONS_TRANSFER_RESTORE
+	EN	Move selected stations back to LMS Favorites
+	DE	Ausgewählte Sender zurück in die LMS-Favoriten verschieben
+
+PLUGIN_RADIOSTATIONS_FAVORITES
+	EN	Radio Favorites
+	DE	Radio Favoriten
+
+PLUGIN_RADIOSTATIONS_MANUAL
+	EN	Manual radio stations
+	DE	Manuelle Radiosender
+
+PLUGIN_RADIOSTATIONS_MANUAL_DESC
+	EN	One station per line: Name | https://stream-address (or just the URL). Use HTTP/HTTPS stream or playlist URLs, not station websites. Save to show these in Radio Favorites when enabled. Remove a line here to remove a manual station. No restart needed for list changes.
+	DE	Ein Sender pro Zeile: Name | https://stream-adresse (oder nur die URL). HTTP/HTTPS-Stream- oder Playlist-Adressen verwenden, keine Sender-Webseiten. Nach dem Speichern erscheinen die Sender im aktivierten Ordner Radio Favoriten. Zum Entfernen die Zeile hier löschen. Listenänderungen benötigen keinen Neustart.
+
+PLUGIN_RADIOSTATIONS_MANUAL_ERROR
+	EN	Manual station list not saved. Check the format and HTTP/HTTPS URL in these lines:
+	DE	Manuelle Senderliste nicht gespeichert. Format und HTTP/HTTPS-Adresse in diesen Zeilen prüfen:
+
+PLUGIN_RADIOSTATIONS_SETTINGS_FAVORITES
+	EN	Show Radio Favorites under Radio
+	DE	Radio Favoriten unter Radio anzeigen
+
+PLUGIN_RADIOSTATIONS_SETTINGS_FAVORITES_DESC
+	EN	Shows saved radio stations in the selected order under Radio. Turning this off does not delete entries.
+	DE	Zeigt gespeicherte Radiosender in der gewählten Reihenfolge unter Radio an. Ausschalten löscht keine Einträge.
+
+PLUGIN_RADIOSTATIONS_FAVORITES_EMPTY
+	EN	No radio favorites yet. Mark a station with the heart or add a manual station in settings.
+	DE	Noch keine Radio-Favoriten. Einen Sender mit dem Herzchen markieren oder in den Einstellungen manuell hinzufügen.
+
+PLUGIN_RADIOSTATIONS_ALL_COUNTRY
+	EN	All stations in this country
+	DE	Alle Sender dieses Landes
+
+PLUGIN_RADIOSTATIONS_DESC
+	EN	Browse and play internet radio stations from the community-driven Radio Browser directory (api.radio-browser.info).
+	DE	Internetradiosender aus dem gemeinschaftlich gepflegten Radio-Browser-Verzeichnis suchen und abspielen.
+
+PLUGIN_RADIOSTATIONS_SEARCH
+	EN	Search Stations
+	DE	Sender suchen
+
+PLUGIN_RADIOSTATIONS_SEARCH_PROMPT
+	EN	Search for a station by name
+	DE	Sender nach Namen suchen
+
+PLUGIN_RADIOSTATIONS_LOCAL
+	EN	Local Stations
+	DE	Sender aus meinem Land
+
+PLUGIN_RADIOSTATIONS_RECENT
+	EN	Recently Played
+	DE	Zuletzt gehört
+
+PLUGIN_RADIOSTATIONS_CLEAR_RECENT
+	EN	Clear recently played
+	DE	Verlauf löschen
+
+PLUGIN_RADIOSTATIONS_TOP
+	EN	Top Stations
+	DE	Beliebte Sender
+
+PLUGIN_RADIOSTATIONS_TOP_VOTED
+	EN	Most Voted
+	DE	Am besten bewertet
+
+PLUGIN_RADIOSTATIONS_TOP_CLICKED
+	EN	Most Played
+	DE	Am häufigsten gehört
+
+PLUGIN_RADIOSTATIONS_BY_TAG
+	EN	Tags
+	DE	Genres / Schlagwörter
+
+PLUGIN_RADIOSTATIONS_SEARCH_TAGS
+	EN	Search Tags
+	DE	Genres / Schlagwörter suchen
+
+PLUGIN_RADIOSTATIONS_BY_COUNTRY
+	EN	By Country
+	DE	Nach Land / Region
+
+PLUGIN_RADIOSTATIONS_ERROR
+	EN	Unable to load stations. Please try again later.
+	DE	Sender konnten nicht geladen werden. Bitte später erneut versuchen.
+
+PLUGIN_RADIOSTATIONS_NONE
+	EN	No stations found
+	DE	Keine Sender gefunden
+
+PLUGIN_RADIOSTATIONS_PARTIAL
+	EN	Showing partial results - the full list could not be loaded in time
+	DE	Unvollständige Ergebnisse – die gesamte Liste konnte nicht rechtzeitig geladen werden
+
+PLUGIN_RADIOSTATIONS_SETTINGS_COUNTRY
+	EN	Country override
+	DE	Land manuell festlegen
+
+PLUGIN_RADIOSTATIONS_SETTINGS_COUNTRY_DESC
+	EN	Two-letter country code (ISO 3166-1 alpha-2, e.g. US, DE, BG) used for the Local Stations menu. Leave empty to auto-detect from your server's location.
+	DE	Zweistelliger Ländercode (ISO 3166-1 alpha-2, z. B. DE, AT oder CH) für „Sender aus meinem Land“. Leer lassen, um das Land anhand des Serverstandorts automatisch zu erkennen.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MAXRESULTS
+	EN	Maximum stations per list
+	DE	Maximale Senderzahl pro Liste
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MAXRESULTS_DESC
+	EN	Maximum number of stations fetched for browse lists (Search, By Tag, By Country). Higher values show more stations but use more memory. Default: 5000.
+	DE	Maximale Anzahl geladener Sender für Suche, Genres, Länder und Regionen. Höhere Werte zeigen mehr Sender, benötigen aber mehr Arbeitsspeicher. Standard: 5000.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_TOPRESULTS
+	EN	Maximum stations in Top charts
+	DE	Maximale Senderzahl in den Bestenlisten
+
+PLUGIN_RADIOSTATIONS_SETTINGS_TOPRESULTS_DESC
+	EN	Maximum number of stations fetched for the global Most Voted and Most Played charts. These are "top N" lists, so a small value keeps them fast; large values can make the chart slow to load or fail. Default: 100.
+	DE	Maximale Anzahl geladener Sender für die weltweite Auswahl der am besten bewerteten und am häufigsten gehörten Sender. Kleine Werte verkürzen die Ladezeit; große Werte können zu langen Ladezeiten oder Fehlern führen. Standard: 100.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MAXTAGS
+	EN	Maximum tags in list
+	DE	Maximale Anzahl der Genres / Schlagwörter
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MAXTAGS_DESC
+	EN	Maximum number of tags shown in the Tags browse list. The Radio Browser directory has ~11 000 tags; higher values show more but may slow down the initial load. Default: 1000.
+	DE	Maximale Anzahl angezeigter Genres und Schlagwörter. Höhere Werte zeigen mehr Einträge, können aber das erste Laden verlangsamen. Standard: 1000.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_RECENTCOUNT
+	EN	Recently played count
+	DE	Anzahl zuletzt gehörter Sender
+
+PLUGIN_RADIOSTATIONS_SETTINGS_RECENTCOUNT_DESC
+	EN	How many recently played stations to remember. Re-playing updates the history; the display remains alphabetical. Range 1-1000. Default: 100.
+	DE	Anzahl der zuletzt gehörten Sender, die gespeichert werden. Erneutes Abspielen aktualisiert den Verlauf; die Anzeige bleibt alphabetisch sortiert. Bereich: 1–1000. Standard: 100.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_CACHETTL
+	EN	Cache lifetime (minutes)
+	DE	Speicherdauer im Zwischenspeicher (Minuten)
+
+PLUGIN_RADIOSTATIONS_SETTINGS_CACHETTL_DESC
+	EN	How long station lists are cached before being refetched from the Radio Browser API, in minutes. Higher values reduce API calls but make vote/play counts update less often. Default: 60.
+	DE	Dauer, für die Senderlisten zwischengespeichert werden, bevor sie erneut von Radio Browser geladen werden. Höhere Werte verringern die Anzahl der Abfragen, aktualisieren Bewertungen und Aufrufzahlen aber seltener. Standard: 60 Minuten.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_HIDEBROKEN
+	EN	Hide broken stations
+	DE	Nicht erreichbare Sender ausblenden
+
+PLUGIN_RADIOSTATIONS_SETTINGS_HIDEBROKEN_DESC
+	EN	Hide stations that failed Radio Browser's most recent reachability check. Uncheck to show all stations, including unverified or currently-broken ones. Enabled by default.
+	DE	Sender ausblenden, die bei der letzten Erreichbarkeitsprüfung von Radio Browser nicht erreichbar waren. Ausschalten, um auch ungeprüfte oder derzeit nicht erreichbare Sender anzuzeigen. Standardmäßig eingeschaltet.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION
+	EN	Menu location
+	DE	Position im Menü
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_DESC
+	EN	Choose whether Radio Stations appears under the Radio menu or the Apps menu. Requires a Lyrion Music Server restart to take effect.
+	DE	Festlegen, ob Radio Stations unter „Radio“ oder „Apps“ erscheint. Die Änderung wird nach einem Neustart des Lyrion Music Servers wirksam.
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_RADIO
+	EN	Radio
+	DE	Radio
+
+PLUGIN_RADIOSTATIONS_SETTINGS_MENULOCATION_APPS
+	EN	Apps
+	DE	Apps
+
+PLUGIN_RADIOSTATIONS_EDIT
+	EN	Edit
+	DE	Bearbeiten
+
+PLUGIN_RADIOSTATIONS_DONE
+	EN	Done
+	DE	Fertig
+
+PLUGIN_RADIOSTATIONS_DELETE_CONFIRM
+	EN	Delete this radio favorite?
+	DE	Diesen Radio-Favoriten löschen?
+
+PLUGIN_RADIOSTATIONS_EDIT_MISSING
+	EN	Station no longer exists. Reload the list.
+	DE	Sender nicht mehr vorhanden. Bitte die Liste neu laden.
+
+PLUGIN_RADIOSTATIONS_EDIT_DUPLICATE
+	EN	This stream URL is already saved for another station.
+	DE	Diese Stream-URL ist bereits für einen anderen Sender gespeichert.
+
+PLUGIN_RADIOSTATIONS_SELECT_PLAYER
+	EN	Select a player first.
+	DE	Bitte zuerst einen Player auswählen.
+
+
+PLUGIN_RADIOSTATIONS_MOVE
+	EN	Remove automatically imported stations from LMS Favorites (move)
+	DE	Automatisch übernommene Sender aus LMS-Favoriten entfernen (verschieben)
+
+PLUGIN_RADIOSTATIONS_MOVE_DESC
+	EN	Unchecked (default): copy new stations and keep LMS favorites. Checked: move after verified storage. Previously imported or manually restored stations are not imported again.
+	DE	Ohne Häkchen (Standard): neue Sender kopieren und LMS-Favoriten behalten. Mit Häkchen: nach geprüfter Speicherung verschieben. Bereits übernommene oder manuell zurückgeschobene Sender werden nicht erneut übernommen.
+
+PLUGIN_RADIOSTATIONS_BACK
+	EN	Back to Radio Favorites
+	DE	Zurück zu Radio Favoriten
+
+PLUGIN_RADIOSTATIONS_CANCEL
+	EN	Cancel
+	DE	Abbrechen
+
+PLUGIN_RADIOSTATIONS_NAVIGATION
+	EN	Navigation
+	DE	Navigation
+
+PLUGIN_RADIOSTATIONS_EDITOR_EXPIRED
+	EN	This editing session has expired. The list has been reloaded; please repeat your action.
+	DE	Diese Bearbeitungssitzung ist abgelaufen. Die Liste wurde neu geladen; bitte die Aktion wiederholen.
+
+PLUGIN_RADIOSTATIONS_EDITOR_IMPORT
+	EN	Automatic recognition and Radio Stations settings
+	DE	Automatische Erkennung und Radio-Stations-Einstellungen
+
+
+PLUGIN_RADIOSTATIONS_AUTO_WAIT
+	EN	Not imported
+	DE	Noch nicht übernommen
+
+PLUGIN_RADIOSTATIONS_AUTO_EXCLUDED
+	EN	Excluded from automatic import
+	DE	Von automatischer Übernahme ausgeschlossen

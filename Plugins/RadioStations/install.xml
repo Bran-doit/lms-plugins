@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension>
+	<!--
+		Plugin metadata read by Lyrion Music Server (LMS) at startup.
+		<name> is the unique plugin id and MUST match the folder name
+		(RadioStations) so repository-based installs map correctly.
+		<module> MUST match the Perl package in Plugin.pm.
+	-->
+	<name>RadioStations</name>
+	<title lang="EN">Radio Stations</title>
+	<title lang="DE">Radio Stations</title>
+	<version>0.9.0</version>
+	<creator>Radio Stations (based on Radio Browser by hjelev)</creator>
+	<module>Plugins::RadioStations::Plugin</module>
+	<desc lang="EN">Independent Radio Browser fork with country and regional browsing. Based on hjelev's Radio Browser plugin.</desc>
+	<desc lang="DE">Eigenständige Erweiterung mit Auswahl nach Land und Region. Basiert auf Radio Browser von hjelev.</desc>
+	<icon>plugins/RadioStations/html/images/RadioBrowser_svg.png</icon>
+	<!--
+		<link> drives the "More Info" link in the pre-install repository view
+		(via repo.xml). Once installed, LMS reads <homepageURL> instead, so we
+		set both to keep "More Info" visible before AND after installation.
+	-->
+	<link>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/RadioStations</link>
+	<homepageURL>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/RadioStations</homepageURL>
+	<!--
+		<optionsURL> makes LMS show a "Settings" link next to the plugin in the
+		Manage Plugins list. It must match Settings.pm's page() URL. Without it
+		the settings page is only reachable via Settings > Advanced.
+	-->
+	<optionsURL>plugins/RadioStations/settings/basic.html</optionsURL>
+
+	<!--
+		Restrict to the LMS application. minVersion 8.0 is required because the
+		plugin relies on the modern OPMLBased menu integration under "Radio".
+	-->
+	<targetApplication>
+		<id>LogitechMediaServer</id>
+		<minVersion>8.0</minVersion>
+		<maxVersion>9.*</maxVersion>
+	</targetApplication>
+</extension>
+
+
+
+
+
+
+

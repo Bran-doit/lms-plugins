@@ -10,7 +10,11 @@ Unter **Einstellungen → Plugins → Zusätzliche Repositories** diese Adresse 
 https://github.com/Bran-doit/lms-plugins/releases/download/repository/repo.xml
 ```
 
-Die Adresse wird mit der ersten erfolgreichen Veröffentlichung verfügbar.
+Radio Stations oder Lyric-Translator auswählen und den Installationshinweisen von LMS folgen.
+
+### Radio Stations
+
+Radiosender aus Radio Browser nach Land und Region durchsuchen. Eigene Radio-Favoriten mit nativer Bearbeitung, manuellen Stream-Links, Senderlogos und optionaler automatischer Übernahme aus LMS-Favoriten. Für **LMS 8.x/9.x**. [Anleitung](Plugins/RadioStations/README.md) · [Änderungsverlauf](Plugins/RadioStations/CHANGELOG.md).
 
 ### Lyric-Translator
 
@@ -31,3 +35,5 @@ Weitere Plugins können später jeweils in einem eigenen Ordner ergänzt werden.
 ## Lizenz
 
 Die Lizenz eines Plugins steht in dessen Ordner. Lyric-Translator verwendet die MIT-Lizenz; Hinweise zu Fremdkomponenten stehen in `THIRD-PARTY.txt`.
+
+Radio Stations wird als kombinierte Distribution unter GPL v2 bereitgestellt; ursprüngliche MIT- und LMS-Lizenzhinweise stehen im Plugin-Ordner.

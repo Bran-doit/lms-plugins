@@ -1,0 +1,52 @@
+ <div class="settingSubGroup">
+  <div class="prefName">[% "PLUGIN_RADIOSTATIONS_TABLE" | string %]</div>
+  <p>[% "PLUGIN_RADIOSTATIONS_TABLE_DESC" | string %]</p>
+  [% IF radioTransferError %]<div role="alert">[% radioTransferError | html %]</div>[% END %]
+  [% IF radioTransferCount.defined %]<p>[% "PLUGIN_RADIOSTATIONS_TRANSFER_COUNT" | string %] [% radioTransferCount %]</p>[% END %]
+  <div class="rs-add">
+   <label for="radioNewUrl">[% "PLUGIN_RADIOSTATIONS_NEW_URL" | string %]<input type="url" name="radioNewUrl" id="radioNewUrl" value="[% radioNewUrl | html %]" placeholder="https://..."></label>
+   <label for="radioNewName">[% "PLUGIN_RADIOSTATIONS_NEW_NAME" | string %]<input type="text" name="radioNewName" id="radioNewName" value="[% radioNewName | html %]"></label>
+   <button type="submit" name="radioTableAction" value="add">[% "PLUGIN_RADIOSTATIONS_ADD" | string %]</button>
+  </div>
+  <p>[% IF radioManualOrder %][% "PLUGIN_RADIOSTATIONS_ORDER_MANUAL" | string %][% ELSE %][% "PLUGIN_RADIOSTATIONS_ORDER_ALPHA" | string %][% END %]</p>
+  <table class="rs-table">
+   <thead><tr><th>[% "PLUGIN_RADIOSTATIONS_ORDER" | string %]</th><th>[% "PLUGIN_RADIOSTATIONS_TABLE_STATUS" | string %]</th><th>[% "PLUGIN_RADIOSTATIONS_TABLE_STATION" | string %]</th><th></th></tr></thead>
+   <tbody>
+   [% FOREACH station IN radioTable %]
+    <tr data-radio-id="[% station.id %]">
+     <td class="rs-arrows">
+      <button type="submit" name="radioOrderAction" value="up:[% station.id %]" title="[% 'PLUGIN_RADIOSTATIONS_UP' | string %]"[% IF loop.first %] disabled[% END %]>&#8593;</button>
+      <button type="submit" name="radioOrderAction" value="down:[% station.id %]" title="[% 'PLUGIN_RADIOSTATIONS_DOWN' | string %]"[% IF loop.last %] disabled[% END %]>&#8595;</button>
+     </td>
+     <td>
+      [% IF station.stored %]
+       <input class="rs-stored" type="checkbox" checked disabled aria-label="[% 'PLUGIN_RADIOSTATIONS_STORED' | string %]"> [% "PLUGIN_RADIOSTATIONS_STORED" | string %]
+      [% ELSE %]
+       [% IF station.autoExcluded %][% "PLUGIN_RADIOSTATIONS_AUTO_EXCLUDED" | string %][% ELSE %][% "PLUGIN_RADIOSTATIONS_AUTO_WAIT" | string %][% END %]
+      [% END %]
+     </td>
+     <td><div style="display:flex;align-items:center;gap:10px">
+      [% stationLogo = station.image || 'plugins/RadioStations/html/images/icon.png' %]
+      <img class="rs-station-logo" src="[% stationLogo | resizeimage(40, 40, 'p', webroot) | html %]" width="40" height="40" alt="" style="object-fit:contain;flex:0 0 40px" onerror="this.onerror=null;this.src='[% webroot %]plugins/RadioStations/html/images/icon.png'">
+      <div style="flex:1;min-width:0">[% IF station.stored && (!radioPlayerView || radioEditId == station.id) %]
+      <label>[% "PLUGIN_RADIOSTATIONS_NEW_NAME" | string %] <input name="radioName_[% station.id %]" value="[% station.name | html %]" aria-label="[% 'PLUGIN_RADIOSTATIONS_NEW_NAME' | string %]"></label>
+      <label class="rs-url">[% "PLUGIN_RADIOSTATIONS_NEW_URL" | string %] <input style="width:95%" name="radioUrl_[% station.id %]" value="[% station.url | html %]" aria-label="[% 'PLUGIN_RADIOSTATIONS_NEW_URL' | string %]"></label>
+      [% ELSE %][% station.name | html %]<small class="rs-url">[% station.url | html %]</small>[% END %]
+      [% UNLESS station.stored %]<small>[% station.statusToken | string %]</small>[% END %]
+      </div></div></td>
+     <td>[% IF station.stored %]
+      [% IF radioPlayerView && radioEditId != station.id %]
+      [% WRAPPER editlink noTarget=1 %]href="[% webroot %]plugins/radiostationsfavorites/index.html?radioEditing=1&amp;radioOpenEdit=[% station.id %]&amp;player=[% player | uri %]" target="_self"[% END %]
+      [% ELSE %]
+      <button type="submit" name="radioTableAction" value="update:[% station.id %]">[% "SAVE" | string %]</button>
+      [% IF radioPlayerView %]<button type="submit" name="radioCancelEdit" value="1" formnovalidate>[% 'PLUGIN_RADIOSTATIONS_CANCEL' | string %]</button>[% END %]
+      [% END %]
+      <button type="submit" name="radioTableAction" value="delete:[% station.id %]" onclick="return confirm(this.getAttribute('data-confirm'))" data-confirm="[% 'PLUGIN_RADIOSTATIONS_DELETE_CONFIRM' | string %]">[% "DELETE" | string %]</button>
+      <button type="submit" name="radioTableAction" value="restore:[% station.id %]">[% "PLUGIN_RADIOSTATIONS_RESTORE_ROW" | string %]</button>
+      [% ELSIF station.manual %]<button type="submit" name="radioTableAction" value="discard:[% station.id %]">[% "PLUGIN_RADIOSTATIONS_DISCARD" | string %]</button>[% END %]
+     </td>
+    </tr>
+   [% END %]
+   </tbody>
+  </table>
+ </div>

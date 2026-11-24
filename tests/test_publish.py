@@ -13,6 +13,17 @@ spec.loader.exec_module(publisher)
 
 
 class PublicationTests(unittest.TestCase):
+    def test_release_notes_select_requested_version(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            plugin = root / "Plugins" / "Example"
+            plugin.mkdir(parents=True)
+            (plugin / "CHANGELOG.md").write_text("# Changelog\n\n## 1.2.3\n\nNew release.\n\n## 1.2.2\n\nOlder release.\n", encoding="utf-8")
+            with patch.object(publisher, "ROOT", root):
+                self.assertEqual(publisher.release_notes("Example-v1.2.3"), "New release.")
+                self.assertEqual(publisher.release_notes("Example-v1.2.2"), "Older release.")
+                self.assertIn("README", publisher.release_notes("Example-v1.0.0"))
+
     def test_archive_and_index_are_consistent_and_reproducible(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
