@@ -17,7 +17,7 @@ use Slim::Control::Request;
 use Plugins::DBRepair::Trace;
 use Time::HiRes ();
 
-our $VERSION = '0.7.1';
+our $VERSION = '0.8.0';
 my ($diagnostic,$diagnosticFile,$diagnosticStart);
 my ($traceInitialized,$traceSetupError);
 sub setTrace {
@@ -261,5 +261,3 @@ sub shutdownPlugin {
     $traceInitialized=0;
 }
 1;
-
-

@@ -1,5 +1,13 @@
 # Änderungen
 
+## 0.8.0
+
+- Deutsche Oberfläche bei deutscher LMS-Systemsprache; Englisch für alle anderen Sprachen.
+- Übersetzte Schaltflächen, Bestätigungsdialoge, Statusmeldungen und dargestellte Diagnosehinweise.
+- Originale JSON-Belege, SQLite-Ausgaben und Pfade bleiben unverändert.
+- Englische Anleitung und automatisierte Tests für Deutsch, Englisch und Fallback-Sprachen.
+- Kein Windows-Helferupdate nötig; Protokoll bleibt 0.7.0.
+
 ## 0.7.1
 
 - Erste Veröffentlichung im gemeinsamen LMS-Plugin-Repository.

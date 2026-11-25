@@ -28,7 +28,9 @@ jobs:
           sudo apt-get install -y libjson-xs-perl liburi-perl libdbd-sqlite3-perl libtemplate-perl
           prove tests/radiostations-*.t
       - name: Test DB Repair diagnostics
-        run: prove tests/dbrepair-*.t
+        run: |
+          prove tests/dbrepair-*.t
+          node tests/dbrepair-i18n.cjs
       - name: Test Search Focus
         run: prove tests/searchfocus-*.t
       - name: Build and publish plugins and repository index

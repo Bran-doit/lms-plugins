@@ -2,11 +2,17 @@ package Plugins::DBRepair::Settings;
 use strict;
 use warnings;
 use utf8;
+use Plugins::DBRepair::I18N;
+use Slim::Utils::Prefs;
 use base qw(Slim::Web::Settings);
 sub name { Slim::Web::HTTP::CSRF->protectName('PLUGIN_DBREPAIR') }
 sub page { Slim::Web::HTTP::CSRF->protectURI('plugins/DBRepair/settings/basic.html') }
 sub handler {
     my ($class,$client,$params) = @_;
+    my $language=Plugins::DBRepair::I18N::language(Slim::Utils::Prefs::preferences('server')->get('language'));
+    $params->{dbrepair_language}=$language;
+    $params->{dbrepair_t}=sub {Plugins::DBRepair::I18N::text($language,$_[0])};
+    $params->{dbrepair_translate}=sub {Plugins::DBRepair::I18N::translate($language,$_[0])};
     if ($params->{saveSettings} && $params->{dbrepair_action}) {
         eval {
             if ($params->{dbrepair_action} =~ /\A(?:trace_on|trace_off|trace_export|protect)\z/) {

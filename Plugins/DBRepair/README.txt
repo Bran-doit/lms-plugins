@@ -1,4 +1,4 @@
-DB Repair 0.7.1 - Windows-Dienst-Version
+DB Repair 0.8.0 - Windows-Dienst-Version
 
 Zweck
 Die echte library.db wird bei gestopptem LMS aus dem Cache in eine Sicherung
@@ -241,3 +241,7 @@ Ein gesperrtes Sidecar bricht die Kopie ab; unvollstaendige Kopie wird entfernt.
 Datenbank sichern benoetigt Windows-Helfer 0.7.0. Alte Helfer werden abgewiesen.
 Einmal auf dem LMS-Server administrativ aktualisieren und Plugin laden:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Pfad\server\Plugins\DBRepair\helper\Install-On-Server.ps1" -ReplaceExisting -RestartLms
+
+Sprache ab 0.8.0: LMS-Systemsprache Deutsch -> Deutsch, sonst Englisch.
+Oberflaeche und Dialoge wechseln automatisch; JSON-Belege bleiben original.
+Kein Helferupdate erforderlich. Englische Anleitung: README.en.md.

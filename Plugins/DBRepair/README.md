@@ -1,5 +1,7 @@
 # DB Repair
 
+[English documentation](README.en.md)
+
 DB Repair ergänzt die LMS-Verwaltung um Datenbankdiagnosen, Sicherungen, einen vollständigen Neuaufbau und einen Neustart des Windows-Dienstes. Eine beschädigte Datenbank wird **nicht direkt repariert**: Der Neuaufbau sichert sie und liest die Musikdateien neu ein.
 
 ## Voraussetzungen
@@ -35,6 +37,8 @@ Beispielwerte ersetzen. Die Installation führt keinen Datenbankreset aus. Der H
 
 Unter **Einstellungen → Erweitert → DB Repair**:
 
+Ab Version 0.8.0 folgt die Oberfläche der in LMS eingestellten Systemsprache: Deutsch bei Deutsch, Englisch bei jeder anderen Sprache. Auch Bestätigungen, Zwischenablagehinweise, Helferstatus und dargestellte Diagnosehinweise wechseln mit. Nach einer Sprachänderung die Seite neu laden. Die kopierbaren JSON-Belege, Dateipfade sowie originale SQLite-/Windows-Fehler werden nicht übersetzt oder verändert; die administrativen Helferskripte behalten ihre bisherigen Konsolentexte.
+
 - **LMS neu starten**: einmaliger Dienstneustart.
 - **Datenbank sichern**: bei gestopptem Dienst eine Kopie einschließlich vorhandener WAL-/Journaldateien erzeugen; anschließend mit der bestehenden Datenbank weiterarbeiten.
 - **Datenbank sichern und neu aufbauen**: alte Datenbank sichern und aus dem aktiven Ordner entfernen; danach Scan anfordern. Datenbankinterne Zusatzdaten können verloren gehen. Musikdateien, Einstellungen und `persist.db` bleiben erhalten.
@@ -52,7 +56,7 @@ Die Ablaufdiagnose ist standardmäßig aus; begrenzte Prozessprotokolle können 
 
 ## Updates und Prüfung
 
-LMS aktualisiert das Plugin. Den getrennt installierten Helfer bei erforderlichen Änderungen administrativ mit `Install-On-Server.ps1 -ReplaceExisting` aktualisieren. Optional fordert `-RestartLms` anschließend einen Dienstneustart an. Plugin 0.7.1 verwendet weiterhin das Helferprotokoll 0.7.0.
+LMS aktualisiert das Plugin. Den getrennt installierten Helfer bei erforderlichen Änderungen administrativ mit `Install-On-Server.ps1 -ReplaceExisting` aktualisieren. Optional fordert `-RestartLms` anschließend einen Dienstneustart an. Plugin 0.8.0 verwendet weiterhin das Helferprotokoll 0.7.0; das Sprachupdate benötigt kein Helferupdate.
 
 Automatisierte Tests prüfen SQLite-Befunde, Vergleiche, Belege und Ablaufdiagnose; Windows-Tests simulieren Dienstzugriffe und prüfen Sicherung/Fehlerfälle mit temporären Dateien. Eine Veröffentlichung führt keine Wartungsaktion auf einem produktiven Server aus.
 
