@@ -22,7 +22,7 @@ Lokale Liedtextübersetzung in acht Sprachen mit automatischer Spracherkennung, 
 
 ### DB Repair
 
-Datenbankdiagnosen, Sicherung und Neuaufbau sowie Dienstneustart für **LMS als Windows-Dienst**. Der Windows-Helfer muss separat administrativ eingerichtet werden. [Anleitung](Plugins/DBRepair/README.md) · [Änderungsverlauf](Plugins/DBRepair/CHANGELOG.md).
+Datenbankdiagnosen, Sicherung und Neuaufbau sowie Dienstneustart für **LMS als Windows-Dienst**. Oberfläche auf Deutsch oder Englisch entsprechend der LMS-Systemsprache. Der Windows-Helfer muss separat administrativ eingerichtet werden. [Anleitung](Plugins/DBRepair/README.md) · [Änderungsverlauf](Plugins/DBRepair/CHANGELOG.md).
 
 ## Updates veröffentlichen
 

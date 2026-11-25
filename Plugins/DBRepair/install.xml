@@ -2,7 +2,7 @@
 <extension>
  <id>ecb51b90-a91d-4b78-8755-125a632bde21</id>
  <name>DBRepair</name><title lang="DE">DB Repair</title><title lang="EN">DB Repair</title><module>Plugins::DBRepair::Plugin</module><importmodule>Plugins::DBRepair::Plugin</importmodule>
- <version>0.7.1</version><desc lang="DE">Datenbankdiagnose, Sicherung, Neuaufbau und Dienstneustart unter Windows.</desc><desc lang="EN">Database diagnostics, backups, rebuilds and Windows service restart.</desc>
+ <version>0.8.0</version><desc lang="DE">Datenbankdiagnose, Sicherung, Neuaufbau und Dienstneustart unter Windows.</desc><desc lang="EN">Database diagnostics, backups, rebuilds and Windows service restart.</desc>
  <creator>Bran-doit</creator><category>scanning</category>
  <link>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/DBRepair</link>
  <homepageURL>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/DBRepair</homepageURL>
@@ -10,8 +10,3 @@
  <defaultState>enabled</defaultState><type>2</type>
  <targetApplication><id>LogitechMediaServer</id><minVersion>9.0.3</minVersion><maxVersion>9.1.*</maxVersion></targetApplication>
 </extension>
-
-
-
-
-

@@ -7,100 +7,91 @@
 #dbrepair [hidden]{display:none!important}
 #dbrepair .dbrepair-check-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 </style>
-<div id="dbrepair" data-busy="[% IF dbrepair.queued %]1[% ELSE %]0[% END %]">
+<div id="dbrepair" data-language="[% dbrepair_language | html %]" data-busy="[% IF dbrepair.queued %]1[% ELSE %]0[% END %]">
 <input type="hidden" name="dbrepair_action" id="dbrepair-action" value="">
 <input type="hidden" name="confirmation" id="dbrepair-confirmation" value="">
 <input type="hidden" name="report_id" id="dbrepair-report-id" value="">
-<h2>DB Repair <small>[% dbrepair.version | html %]</small></h2>
-<section><h3>Server neu starten</h3>
-<p>LMS einmal stoppen und wieder starten. Die Datenbank bleibt erhalten; die Wiedergabe wird unterbrochen.</p>
-[% IF dbrepair.version == '0.7.0' && dbrepair.ready && !dbrepair.restartSupported %]<p class="error">Der Windows-Helfer muss einmal auf Version 0.2.0 aktualisiert werden.</p>[% END %]
-<button type="button" data-action="restart" [% IF (dbrepair.version != '0.7.1' && dbrepair.version != '0.6.0' && dbrepair.version != '0.5.0' && dbrepair.version != '0.4.0' && dbrepair.version != '0.3.0' && dbrepair.version != '0.2.0') || !dbrepair.ready || !dbrepair.restartSupported || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>LMS neu starten</button>
+<h2>[% dbrepair_t('UI_0') | html %] <small>[% dbrepair.version | html %]</small></h2>
+<section><h3>[% dbrepair_t('UI_1') | html %]</h3>
+<p>[% dbrepair_t('UI_2') | html %]</p>
+[% IF dbrepair.ready && !dbrepair.restartSupported %]<p class="error">[% dbrepair_t('UI_3') | html %]</p>[% END %]
+<button type="button" data-action="restart" [% IF (dbrepair.version != '0.8.0' && dbrepair.version != '0.7.1' && dbrepair.version != '0.7.0' && dbrepair.version != '0.6.0' && dbrepair.version != '0.5.0' && dbrepair.version != '0.4.0' && dbrepair.version != '0.3.0' && dbrepair.version != '0.2.0') || !dbrepair.ready || !dbrepair.restartSupported || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>[% dbrepair_t('UI_4') | html %]</button>
 </section>
-[% IF dbrepair.version != '0.7.1' %]<p class="error" role="alert">Die neuen Dateien sind installiert, aber LMS verwendet noch Plugin-Version [% dbrepair.version | html %]. Bitte LMS mit dem Neustart-Button oben neu starten. Die Diagnose wird danach freigeschaltet. F&#252;r neue Sicherungsnachweise muss zus&#228;tzlich der Helfer aktualisiert werden.</p>[% END %]
-<p>Musikdatenbank sichern, vollst&#228;ndig entfernen und aus den Musikdateien neu aufbauen.</p>
-[% IF dbrepair_error %]<p class="error" role="alert">[% dbrepair_error | html %]</p>[% END %]
-[% IF dbrepair_message %]<p class="notice" role="status">[% dbrepair_message | html %]</p>[% END %]
-<section><h3>Status</h3>
-[% IF dbrepair.ready %]<p>Windows-Helfer erreichbar.</p>[% ELSE %]<p class="error">Windows-Helfer nicht erreichbar. Einmalige Einrichtung auf dem LMS-Server erforderlich.</p>[% END %]
-<p>[% dbrepair.message | html %]</p>
-[% IF dbrepair.queued %]<p>Ein Wartungsauftrag ist aktiv. Keine weiteren Auftr&#228;ge m&#246;glich.</p>[% END %]
-[% IF dbrepair.scanning %]<p>Die Musikbibliothek wird gerade eingelesen.</p>[% END %]
-<button type="button" id="dbrepair-refresh">Status aktualisieren</button>
+[% IF dbrepair.version != '0.8.0' %]<p class="error" role="alert">[% dbrepair_t('UI_5') | html %] [% dbrepair.version | html %][% dbrepair_t('UI_6') | html %]</p>[% END %]
+<p>[% dbrepair_t('UI_7') | html %]</p>
+[% IF dbrepair_error %]<p class="error" role="alert">[% dbrepair_translate(dbrepair_error) | html %]</p>[% END %]
+[% IF dbrepair_message %]<p class="notice" role="status">[% dbrepair_translate(dbrepair_message) | html %]</p>[% END %]
+<section><h3>[% dbrepair_t('UI_8') | html %]</h3>
+[% IF dbrepair.ready %]<p>[% dbrepair_t('UI_9') | html %]</p>[% ELSE %]<p class="error">[% dbrepair_t('UI_10') | html %]</p>[% END %]
+<p>[% dbrepair_translate(dbrepair.message) | html %]</p>
+[% IF dbrepair.queued %]<p>[% dbrepair_t('UI_11') | html %]</p>[% END %]
+[% IF dbrepair.scanning %]<p>[% dbrepair_t('UI_12') | html %]</p>[% END %]
+<button type="button" id="dbrepair-refresh">[% dbrepair_t('UI_13') | html %]</button>
 </section>
-<section><h3>Ablaufdiagnose virtueller Bibliotheken</h3>
-<p>[% IF dbrepair.trace_enabled %]Aktiv[% ELSE %]Ausgeschaltet[% END %]. Erfasst Registrierung, Entfernung, Neuaufbau, Auswahl-Callbacks, SQL-Phasen und Benachrichtigungen in Server und Scanner. Ver&#228;ndert keine Commits, Sperren oder Datenbankeinstellungen.</p>
-[% IF dbrepair.trace_error %]<p class="error">Protokollierungsfehler: [% dbrepair.trace_error | html %]. Der normale Bibliotheksablauf wird weiter ausgef&#252;hrt.</p>[% END %]
-<button type="button" data-action="trace_on" [% IF dbrepair.version != '0.7.1' || dbrepair.trace_enabled %]disabled[% END %]>Ablaufdiagnose einschalten</button>
-<button type="button" data-action="trace_off" [% IF dbrepair.version != '0.7.1' || !dbrepair.trace_enabled %]disabled[% END %]>Ablaufdiagnose ausschalten</button>
-<button type="button" data-action="trace_export" [% IF dbrepair.version != '0.7.1' || dbrepair.queued %]disabled[% END %]>Ablaufprotokoll als Bericht sammeln</button>
-<p>Server und zuk&#252;nftig gestartete Scanner schreiben getrennte Dateien. Die gemeinsame Zeitleiste kennzeichnet Verschachtelungen, zeitliche &#220;berschneidungen und fehlende Enden. Eine &#220;berschneidung beweist keinen SQLite-Schreibkonflikt. Fr&#252;here Startvorg&#228;nge und nicht instrumentierte Lesezugriffe bleiben unbekannt. Speichergrenze: etwa 48 MiB rollierende Ablaufprotokolle; gesch&#252;tzte Berichte enthalten eigene Kopien.</p>
+<section><h3>[% dbrepair_t('UI_14') | html %]</h3>
+<p>[% IF dbrepair.trace_enabled %][% dbrepair_t('UI_15') | html %][% ELSE %][% dbrepair_t('UI_16') | html %][% END %][% dbrepair_t('UI_17') | html %]</p>
+[% IF dbrepair.trace_error %]<p class="error">[% dbrepair_t('UI_18') | html %] [% dbrepair_translate(dbrepair.trace_error) | html %][% dbrepair_t('UI_19') | html %]</p>[% END %]
+<button type="button" data-action="trace_on" [% IF dbrepair.version != '0.8.0' || dbrepair.trace_enabled %]disabled[% END %]>[% dbrepair_t('UI_20') | html %]</button>
+<button type="button" data-action="trace_off" [% IF dbrepair.version != '0.8.0' || !dbrepair.trace_enabled %]disabled[% END %]>[% dbrepair_t('UI_21') | html %]</button>
+<button type="button" data-action="trace_export" [% IF dbrepair.version != '0.8.0' || dbrepair.queued %]disabled[% END %]>[% dbrepair_t('UI_22') | html %]</button>
+<p>[% dbrepair_t('UI_23') | html %]</p>
 </section>
-<section><h3>Datenbank pr&#252;fen</h3>
-<p>Nur lesende Pr&#252;fung der library.db in einem separaten Prozess. Kein Neustart und keine Reparatur. Ein laufender Scan muss zuerst beendet werden. Eine lange Pr&#252;fung kann zus&#228;tzliche Last erzeugen; Zeitlimit: zehn Minuten.</p>
-<label>Kennzeichnung <select name="check_label"><option value="manual">Manuelle Pr&#252;fung</option><option value="before_scan">Vor einem Scan</option><option value="after_scan">Nach einem Scan</option><option value="before_update">Vor einer Bibliotheksaktualisierung</option><option value="after_update">Nach einer Bibliotheksaktualisierung</option></select></label>
-<div class="dbrepair-check-controls"><label>Pr&#252;fung <select id="dbrepair-check-mode"><option value="quick_check">Schnellpr&#252;fung</option><option value="integrity_check">Vollst&#228;ndige Pr&#252;fung</option><option value="compare">Aktuelle Datenbank mit Backup vergleichen</option></select></label>
-<label id="dbrepair-compare-backup" hidden>Sicherung <select name="compare_backup_id"><option value="">Bitte ausw&#228;hlen</option>[% FOREACH backup IN dbrepair.backups %]<option value="[% backup.id | html %]">[% backup.id | html %]</option>[% END %]</select></label>
-<button type="button" data-action="diagnose" [% IF dbrepair.version != '0.7.1' || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>Pr&#252;fung starten</button></div>
-<p>Der Vergleich prueft beide Datenbanken vollstaendig und vergleicht Tabellen, Spalten, Indizes, Titel-/Albumzahlen sowie Bibliothekszuordnungen anhand exakter Titel-URLs. Unterschiede sind nicht automatisch Beschaedigungen.</p>
-<p>quick_check pr&#252;ft grundlegende Strukturen; integrity_check pr&#252;ft zus&#228;tzlich unter anderem Tabellen-/Indexkonsistenz und UNIQUE-Bedingungen. Fremdschl&#252;ssel, Musikdateien und inhaltliche Metadatenfehler werden damit nicht vollst&#228;ndig gepr&#252;ft.</p>
-[% IF dbrepair.diagnosing %]<p class="notice" role="status">Datenbankpr&#252;fung l&#228;uft. Diese Seite aktualisiert sich nach Abschluss.</p>[% END %]
-<h4>Gesch&#252;tzte Belege und letzte 20 ungesch&#252;tzte Berichte</h4>
+<section><h3>[% dbrepair_t('UI_24') | html %]</h3>
+<p>[% dbrepair_t('UI_25') | html %]</p>
+<label>[% dbrepair_t('UI_26') | html %] <select name="check_label"><option value="manual">[% dbrepair_t('UI_27') | html %]</option><option value="before_scan">[% dbrepair_t('UI_28') | html %]</option><option value="after_scan">[% dbrepair_t('UI_29') | html %]</option><option value="before_update">[% dbrepair_t('UI_30') | html %]</option><option value="after_update">[% dbrepair_t('UI_31') | html %]</option></select></label>
+<div class="dbrepair-check-controls"><label>[% dbrepair_t('UI_32') | html %] <select id="dbrepair-check-mode"><option value="quick_check">[% dbrepair_t('UI_33') | html %]</option><option value="integrity_check">[% dbrepair_t('UI_34') | html %]</option><option value="compare">[% dbrepair_t('UI_35') | html %]</option></select></label>
+<label id="dbrepair-compare-backup" hidden>[% dbrepair_t('UI_36') | html %] <select name="compare_backup_id"><option value="">[% dbrepair_t('UI_37') | html %]</option>[% FOREACH backup IN dbrepair.backups %]<option value="[% backup.id | html %]">[% backup.id | html %]</option>[% END %]</select></label>
+<button type="button" data-action="diagnose" [% IF dbrepair.version != '0.8.0' || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>[% dbrepair_t('UI_38') | html %]</button></div>
+<p>[% dbrepair_t('UI_39') | html %]</p>
+<p>[% dbrepair_t('UI_40') | html %]</p>
+[% IF dbrepair.diagnosing %]<p class="notice" role="status">[% dbrepair_t('UI_41') | html %]</p>[% END %]
+<h4>[% dbrepair_t('UI_42') | html %]</h4>
 [% FOREACH report IN dbrepair.checks %]
-<details class="dbrepair-report"><summary>[% report.started | html %] | [% report.mode | html %] | [% IF report.mode == 'compare' %]Einzelbefunde und Vergleich[% ELSIF report.mode == 'trace' %]Ablaufbeobachtung[% ELSIF report.state == 'ok' %]OK[% ELSIF report.state == 'findings' %]Fehler gefunden[% ELSE %]Pr&#252;fung fehlgeschlagen[% END %][% IF report.protection.reason %] | Gesch&#252;tzt[% END %]</summary>
-[% IF report.protection.reason %]<p class="notice">Vor automatischer Bereinigung gesch&#252;tzt: [% report.protection.reason | html %]. Einschlie&#223;lich gespeicherter Kontext- und Ablaufdaten.</p>[% ELSE %]<button type="button" data-action="protect" data-report-id="[% report.check_id | html %]" [% IF dbrepair.version != '0.7.1' %]disabled[% END %]>Bericht dauerhaft aufbewahren</button>[% END %]
-<p>Kennzeichnung: [% report.label | html %]  |  Laufzeit: [% report.seconds | html %] Sekunden</p>
-<p>Pr&#252;f-ID: [% report.check_id | html %]<br>Start: [% report.started | html %]<br>Ende: [% report.finished | html %]<br>Datenbank: [% report.database.path | html %] ([% report.database.kind | html %])<br>Befehl: [% report.command | html %]</p>
-[% IF report.mode == 'compare' %]<p class="notice"><strong>Inhaltsvergleich: [% IF report.output_complete %]abgeschlossen[% ELSE %]nicht m&#246;glich[% END %].</strong> Die Integrit&#228;tsbefunde beider Datenbanken stehen getrennt darunter.</p>[% ELSIF report.mode != 'trace' && report.output_complete == 0 %]<p class="error">Weitere Sch&#228;den m&#246;glich; Ausgabe unvollst&#228;ndig.</p>[% END %]
-[% IF report.synchronous_warning %]<p class="notice">[% report.synchronous_warning | html %]</p>[% END %]
+<details class="dbrepair-report"><summary>[% report.started | html %] | [% dbrepair_translate(report.mode) | html %] | [% IF report.mode == 'compare' %][% dbrepair_t('UI_43') | html %][% ELSIF report.mode == 'trace' %][% dbrepair_t('UI_44') | html %][% ELSIF report.state == 'ok' %][% dbrepair_t('UI_45') | html %][% ELSIF report.state == 'findings' %][% dbrepair_t('UI_46') | html %][% ELSE %][% dbrepair_t('UI_47') | html %][% END %][% IF report.protection.reason %] [% dbrepair_t('UI_48') | html %][% END %]</summary>
+[% IF report.protection.reason %]<p class="notice">[% dbrepair_t('UI_49') | html %] [% dbrepair_translate(report.protection.reason) | html %][% dbrepair_t('UI_50') | html %]</p>[% ELSE %]<button type="button" data-action="protect" data-report-id="[% report.check_id | html %]" [% IF dbrepair.version != '0.8.0' %]disabled[% END %]>[% dbrepair_t('UI_51') | html %]</button>[% END %]
+<p>[% dbrepair_t('UI_52') | html %] [% dbrepair_translate(report.label) | html %]  [% dbrepair_t('UI_53') | html %] [% report.seconds | html %] [% dbrepair_t('UI_54') | html %]</p>
+<p>[% dbrepair_t('UI_55') | html %] [% report.check_id | html %]<br>[% dbrepair_t('UI_56') | html %] [% report.started | html %]<br>[% dbrepair_t('UI_57') | html %] [% report.finished | html %]<br>[% dbrepair_t('UI_58') | html %] [% report.database.path | html %] ([% dbrepair_translate(report.database.kind) | html %])<br>[% dbrepair_t('UI_59') | html %] [% report.command | html %]</p>
+[% IF report.mode == 'compare' %]<p class="notice"><strong>[% dbrepair_t('UI_60') | html %] [% IF report.output_complete %][% dbrepair_t('UI_61') | html %][% ELSE %][% dbrepair_t('UI_62') | html %][% END %].</strong> [% dbrepair_t('UI_63') | html %]</p>[% ELSIF report.mode != 'trace' && report.output_complete == 0 %]<p class="error">[% dbrepair_t('UI_64') | html %]</p>[% END %]
+[% IF report.synchronous_warning %]<p class="notice">[% dbrepair_translate(report.synchronous_warning) | html %]</p>[% END %]
 [% FOREACH check IN report.checks %]
 <div class="[% IF check.state == 'ok' %]notice[% ELSE %]error[% END %]">
-<strong>[% IF check.database.kind == 'backup' %]Sicherung[% ELSE %]Aktuelle Datenbank[% END %]:
-[% IF check.state == 'ok' %]Integrit&#228;tspr&#252;fung OK[% ELSIF check.error.category == 'corruption' %]Datenbankbesch&#228;digung festgestellt[% ELSIF check.state == 'findings' %]Integrit&#228;tsfehler gefunden[% ELSE %]Pr&#252;fung fehlgeschlagen[% END %]</strong>
+<strong>[% IF check.database.kind == 'backup' %][% dbrepair_t('UI_36') | html %][% ELSE %][% dbrepair_t('UI_65') | html %][% END %]:
+[% IF check.state == 'ok' %][% dbrepair_t('UI_66') | html %][% ELSIF check.error.category == 'corruption' %][% dbrepair_t('UI_67') | html %][% ELSIF check.state == 'findings' %][% dbrepair_t('UI_68') | html %][% ELSE %][% dbrepair_t('UI_47') | html %][% END %]</strong>
 <p>[% check.database.path | html %]</p>
-[% IF check.synchronous_warning %]<p>[% check.synchronous_warning | html %]</p>[% END %]
-[% IF check.error %]<p>Fehlercode: [% check.error.code | html %]<br>[% check.error.message | html %]</p>[% END %]
-[% IF check.state != 'ok' %]<details><summary>SQLite-Einzelbefunde anzeigen</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">[% FOREACH message IN check.messages %][% message | html %]
+[% IF check.synchronous_warning %]<p>[% dbrepair_translate(check.synchronous_warning) | html %]</p>[% END %]
+[% IF check.error %]<p>[% dbrepair_t('UI_69') | html %] [% check.error.code | html %]<br>[% dbrepair_translate(check.error.message) | html %]</p>[% END %]
+[% IF check.state != 'ok' %]<details><summary>[% dbrepair_t('UI_70') | html %]</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">[% FOREACH message IN check.messages %][% dbrepair_translate(message) | html %]
 [% END %]</pre></details>[% END %]
 </div>
 [% END %]
 [% IF report.mode == 'compare' %]
-<h4>Entstehung der Sicherung und historischer Kontext</h4>
-<p>[% IF report.backup_evidence.message %][% report.backup_evidence.message | html %][% ELSE %]Sicherungskonsistenz nicht belegt: Dieser &#228;ltere Bericht enth&#228;lt keinen Sicherungsnachweis.[% END %]</p>
-<p>[% IF report.historical_context_note %][% report.historical_context_note | html %][% ELSE %]Heutige Plugin-Versionen und SQLite-Einstellungen belegen nicht die damaligen Bedingungen beim Erstellen der Sicherung.[% END %]</p>
+<h4>[% dbrepair_t('UI_71') | html %]</h4>
+<p>[% IF report.backup_evidence.message %][% dbrepair_translate(report.backup_evidence.message) | html %][% ELSE %][% dbrepair_t('UI_72') | html %][% END %]</p>
+<p>[% IF report.historical_context_note %][% dbrepair_translate(report.historical_context_note) | html %][% ELSE %][% dbrepair_t('UI_73') | html %][% END %]</p>
 [% END %]
-[% IF report.damage_summary %]<h4>Schadens&#252;bersicht</h4><p>[% report.damage_summary.note | html %]</p><p>Indizes: [% report.damage_summary.indexes.join(', ') | html %]. Seiten: [% report.damage_summary.pages.join(', ') | html %]. Zuordnung von Seiten zu Tabellen nur bei gesichertem Nachweis; hier nicht behauptet.</p>[% END %]
-[% FOREACH check IN report.checks %][% IF check.damage_summary.indexes.size || check.damage_summary.pages.size %]<h4>Schadens&#252;bersicht: [% check.database.kind | html %]</h4><p>[% check.damage_summary.note | html %]</p><p>Indizes: [% check.damage_summary.indexes.join(', ') | html %]<br>Seiten: [% check.damage_summary.pages.join(', ') | html %]</p><p>Gruppierung nach Seitenverwaltung, Baumstruktur und Indexfehlern sowie belegte Index-/Tabellenzuordnungen im JSON-Protokoll.</p>[% END %][% END %]
-[% IF report.trace.source_files.size %]<h4>Gemeinsame Ablaufzeitleiste</h4><p>[% report.trace.events.size %] Ereignisse; [% report.trace.nested_rebuilds.size %] verschachtelte Neuaufbauten; [% report.trace.cross_process_overlaps.size %] prozess&#252;bergreifende &#220;berschneidungen; [% report.trace.incomplete_operations.size %] unvollst&#228;ndige Intervalle.</p><p>[% report.trace.warning | html %]</p><p>Zuordnung zur Pr&#252;fung: [% report.trace.attribution | html %]. Ereignisse, Operations-IDs und Aufrufketten im vollst&#228;ndigen kopierbaren JSON.</p>[% END %]
-<pre style="white-space:pre-wrap;overflow-wrap:anywhere">[% FOREACH message IN report.messages %][% message | html %]
-[% END %]</pre><button type="button" class="dbrepair-copy">Pr&#252;fprotokoll kopieren</button><span class="dbrepair-copy-status" role="status"></span><details><summary>Vollst&#228;ndiges Diagnoseprotokoll (JSON)</summary><pre class="dbrepair-report-json" style="white-space:pre-wrap;overflow-wrap:anywhere">[% report.details_json | html %]</pre></details></details>
+[% IF report.damage_summary %]<h4>[% dbrepair_t('UI_74') | html %]</h4><p>[% dbrepair_translate(report.damage_summary.note) | html %]</p><p>[% dbrepair_t('UI_75') | html %] [% report.damage_summary.indexes.join(', ') | html %][% dbrepair_t('UI_76') | html %] [% report.damage_summary.pages.join(', ') | html %][% dbrepair_t('UI_77') | html %]</p>[% END %]
+[% FOREACH check IN report.checks %][% IF check.damage_summary.indexes.size || check.damage_summary.pages.size %]<h4>[% dbrepair_t('UI_78') | html %] [% dbrepair_translate(check.database.kind) | html %]</h4><p>[% dbrepair_translate(check.damage_summary.note) | html %]</p><p>[% dbrepair_t('UI_75') | html %] [% check.damage_summary.indexes.join(', ') | html %]<br>[% dbrepair_t('UI_79') | html %] [% check.damage_summary.pages.join(', ') | html %]</p><p>[% dbrepair_t('UI_80') | html %]</p>[% END %][% END %]
+[% IF report.trace.source_files.size %]<h4>[% dbrepair_t('UI_81') | html %]</h4><p>[% report.trace.events.size %] [% dbrepair_t('UI_82') | html %] [% report.trace.nested_rebuilds.size %] [% dbrepair_t('UI_83') | html %] [% report.trace.cross_process_overlaps.size %] [% dbrepair_t('UI_84') | html %] [% report.trace.incomplete_operations.size %] [% dbrepair_t('UI_85') | html %]</p><p>[% dbrepair_translate(report.trace.warning) | html %]</p><p>[% dbrepair_t('UI_86') | html %] [% dbrepair_translate(report.trace.attribution) | html %][% dbrepair_t('UI_87') | html %]</p>[% END %]
+<pre style="white-space:pre-wrap;overflow-wrap:anywhere">[% FOREACH message IN report.messages %][% dbrepair_translate(message) | html %]
+[% END %]</pre><button type="button" class="dbrepair-copy">[% dbrepair_t('UI_88') | html %]</button><span class="dbrepair-copy-status" role="status"></span><details><summary>[% dbrepair_t('UI_89') | html %]</summary><pre class="dbrepair-report-json" style="white-space:pre-wrap;overflow-wrap:anywhere">[% report.details_json | html %]</pre></details></details>
 [% END %]
-[% UNLESS dbrepair.checks.size %]<p>Noch keine Pr&#252;fberichte vorhanden.</p>[% END %]
-<p>Vollst&#228;ndige zur&#252;ckgegebene SQLite-Ausgabe ohne Textk&#252;rzung; Abbr&#252;che sind gekennzeichnet. Die Ergebnisse beziehen sich auf den Datenstand zu Pr&#252;fbeginn. Kennzeichnungen dienen dem manuellen Vorher-/Nachher-Vergleich. Das Protokoll unterscheidet LMS- und Diagnoseverbindung und enth&#228;lt Versionen, aktive Plugins, Prozessdaten sowie Fehlerdetails. Fehlende Angaben werden als unbekannt bzw. mit Erfassungsfehler ausgewiesen.</p>
+[% UNLESS dbrepair.checks.size %]<p>[% dbrepair_t('UI_90') | html %]</p>[% END %]
+<p>[% dbrepair_t('UI_91') | html %]</p>
 </section>
 
-<section><h3>Datenbankoperationen</h3>
-[% IF !dbrepair.helperEvidenceSupported %]<p class="notice">Der aktuelle Windows-Helfer erstellt noch keine erweiterten Sicherungsnachweise. F&#252;r neue Sicherungen mit SHA-256, Dateigr&#246;&#223;en und dokumentiertem Dienst-/Scannerzustand ist das Helferupdate auf 0.7.0 erforderlich. Alte Sicherungen bleiben verwendbar; ihre Konsistenz gilt ohne Nachweis als nicht belegt.</p>[% END %]
-<p>F&#252;r beide Operationen wird LMS kurz gestoppt. Wiedergabe und Oberfl&#228;che werden unterbrochen.</p>
-<p><strong>Datenbank sichern:</strong> Erstellt eine neue Kopie der aktuellen Datenbank samt vorhandenen SQLite-Begleitdateien. Danach startet LMS mit der bisherigen Datenbank; kein Neuaufbau wird angefordert. Die Kopie erscheint unter &#8222;Gesicherte Datenbanken&#8220; und steht f&#252;r Vergleiche bereit.</p>
-<p><strong>Datenbank sichern und neu aufbauen:</strong> Sichert die alte Datenbank, entfernt sie aus dem aktiven Ordner und liest die Bibliothek neu ein. Datenbankinterne Zusatzdaten k&#246;nnen dabei verloren gehen. Musikdateien und Einstellungen bleiben erhalten.</p>
-[% IF !dbrepair.backupSupported %]<p class="notice">F&#252;r &#8222;Datenbank sichern&#8220; bitte den Windows-Helfer auf 0.7.0 aktualisieren.</p>[% END %]
-<label>Operation <select id="dbrepair-operation"><option value="reset">Datenbank sichern und neu aufbauen</option><option value="backup" [% IF !dbrepair.backupSupported %]disabled[% END %]>Datenbank sichern</option></select></label>
-<button type="button" data-action="database_operation" [% IF dbrepair.version != '0.7.1' || !dbrepair.ready || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>Operation starten</button></section>
-<section><h3>Gesicherte Datenbanken</h3>
-<label>Sicherung <select name="backup_id"><option value="">Bitte ausw&#228;hlen</option>[% FOREACH backup IN dbrepair.backups %]<option value="[% backup.id | html %]">[% backup.id | html %] ([% backup.bytes | html %] Bytes)</option>[% END %]</select></label>
-[% UNLESS dbrepair.backups.size %]<p>Keine Sicherungen vorhanden.</p>[% END %]
-<button type="button" data-action="delete" [% IF (dbrepair.version != '0.7.1' && dbrepair.version != '0.6.0' && dbrepair.version != '0.5.0' && dbrepair.version != '0.4.0' && dbrepair.version != '0.3.0' && dbrepair.version != '0.2.0') || !dbrepair.ready || dbrepair.queued || dbrepair.scanning || !dbrepair.backups.size %]disabled[% END %]>Ausgew&#228;hlte Sicherung l&#246;schen</button>
-<noscript><p>Bitte JavaScript aktivieren, um die Aktionen mit Best&#228;tigungsdialog zu verwenden.</p></noscript>
+<section><h3>[% dbrepair_t('UI_92') | html %]</h3>
+[% IF !dbrepair.helperEvidenceSupported %]<p class="notice">[% dbrepair_t('UI_93') | html %]</p>[% END %]
+<p>[% dbrepair_t('UI_94') | html %]</p>
+<p><strong>[% dbrepair_t('UI_95') | html %]</strong> [% dbrepair_t('UI_96') | html %]</p>
+<p><strong>[% dbrepair_t('UI_97') | html %]</strong> [% dbrepair_t('UI_98') | html %]</p>
+[% IF !dbrepair.backupSupported %]<p class="notice">[% dbrepair_t('UI_99') | html %]</p>[% END %]
+<label>[% dbrepair_t('UI_100') | html %] <select id="dbrepair-operation"><option value="reset">[% dbrepair_t('UI_101') | html %]</option><option value="backup" [% IF !dbrepair.backupSupported %]disabled[% END %]>[% dbrepair_t('UI_102') | html %]</option></select></label>
+<button type="button" data-action="database_operation" [% IF dbrepair.version != '0.8.0' || !dbrepair.ready || dbrepair.queued || dbrepair.scanning %]disabled[% END %]>[% dbrepair_t('UI_103') | html %]</button></section>
+<section><h3>[% dbrepair_t('UI_104') | html %]</h3>
+<label>[% dbrepair_t('UI_36') | html %] <select name="backup_id"><option value="">[% dbrepair_t('UI_37') | html %]</option>[% FOREACH backup IN dbrepair.backups %]<option value="[% backup.id | html %]">[% backup.id | html %] ([% backup.bytes | html %] [% dbrepair_t('UI_105') | html %]</option>[% END %]</select></label>
+[% UNLESS dbrepair.backups.size %]<p>[% dbrepair_t('UI_106') | html %]</p>[% END %]
+<button type="button" data-action="delete" [% IF (dbrepair.version != '0.8.0' && dbrepair.version != '0.7.1' && dbrepair.version != '0.7.0' && dbrepair.version != '0.6.0' && dbrepair.version != '0.5.0' && dbrepair.version != '0.4.0' && dbrepair.version != '0.3.0' && dbrepair.version != '0.2.0') || !dbrepair.ready || dbrepair.queued || dbrepair.scanning || !dbrepair.backups.size %]disabled[% END %]>[% dbrepair_t('UI_107') | html %]</button>
+<noscript><p>[% dbrepair_t('UI_108') | html %]</p></noscript>
 </section></div>
-<script src="[% webroot %]plugins/DBRepair/settings/actions.js?v=0.7.1"></script>
+<script src="[% webroot %]plugins/DBRepair/settings/actions.js?v=0.8.0"></script>
 [% PROCESS settings/footer.html %]
-
-
-
-
-
-
-
-
-

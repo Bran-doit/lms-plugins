@@ -1,0 +1,858 @@
+{
+  "UI_0": {
+    "de": "DB Repair",
+    "en": "DB Repair"
+  },
+  "UI_1": {
+    "de": "Server neu starten",
+    "en": "Restart server"
+  },
+  "UI_2": {
+    "de": "LMS einmal stoppen und wieder starten. Die Datenbank bleibt erhalten; die Wiedergabe wird unterbrochen.",
+    "en": "Stop and start LMS once. The database is preserved; playback will be interrupted."
+  },
+  "UI_3": {
+    "de": "Der Windows-Helfer muss einmal auf Version 0.2.0 aktualisiert werden.",
+    "en": "The Windows helper must be updated to version 0.2.0."
+  },
+  "UI_4": {
+    "de": "LMS neu starten",
+    "en": "Restart LMS"
+  },
+  "UI_5": {
+    "de": "Die neuen Dateien sind installiert, aber LMS verwendet noch Plugin-Version",
+    "en": "The new files are installed, but LMS is still running plugin version"
+  },
+  "UI_6": {
+    "de": ". Bitte LMS mit dem Neustart-Button oben neu starten. Die Diagnose wird danach freigeschaltet. F\u00fcr neue Sicherungsnachweise muss zus\u00e4tzlich der Helfer aktualisiert werden.",
+    "en": ". Please restart LMS using the button above to enable diagnostics. The helper must also be updated to create new backup evidence."
+  },
+  "UI_7": {
+    "de": "Musikdatenbank sichern, vollst\u00e4ndig entfernen und aus den Musikdateien neu aufbauen.",
+    "en": "Back up the music database, remove it completely and rebuild it from the music files."
+  },
+  "UI_8": {
+    "de": "Status",
+    "en": "Status"
+  },
+  "UI_9": {
+    "de": "Windows-Helfer erreichbar.",
+    "en": "Windows helper is available."
+  },
+  "UI_10": {
+    "de": "Windows-Helfer nicht erreichbar. Einmalige Einrichtung auf dem LMS-Server erforderlich.",
+    "en": "Windows helper is unavailable. One-time setup on the LMS server is required."
+  },
+  "UI_11": {
+    "de": "Ein Wartungsauftrag ist aktiv. Keine weiteren Auftr\u00e4ge m\u00f6glich.",
+    "en": "A maintenance request is active. No further requests can be submitted."
+  },
+  "UI_12": {
+    "de": "Die Musikbibliothek wird gerade eingelesen.",
+    "en": "The music library is currently being scanned."
+  },
+  "UI_13": {
+    "de": "Status aktualisieren",
+    "en": "Refresh status"
+  },
+  "UI_14": {
+    "de": "Ablaufdiagnose virtueller Bibliotheken",
+    "en": "Virtual library tracing"
+  },
+  "UI_15": {
+    "de": "Aktiv",
+    "en": "Enabled"
+  },
+  "UI_16": {
+    "de": "Ausgeschaltet",
+    "en": "Disabled"
+  },
+  "UI_17": {
+    "de": ". Erfasst Registrierung, Entfernung, Neuaufbau, Auswahl-Callbacks, SQL-Phasen und Benachrichtigungen in Server und Scanner. Ver\u00e4ndert keine Commits, Sperren oder Datenbankeinstellungen.",
+    "en": ". Records registration, removal, rebuilds, selection callbacks, SQL phases and notifications in the server and scanner. Does not change commits, locks or database settings."
+  },
+  "UI_18": {
+    "de": "Protokollierungsfehler:",
+    "en": "Logging error:"
+  },
+  "UI_19": {
+    "de": ". Der normale Bibliotheksablauf wird weiter ausgef\u00fchrt.",
+    "en": ". Normal library processing continues."
+  },
+  "UI_20": {
+    "de": "Ablaufdiagnose einschalten",
+    "en": "Enable tracing"
+  },
+  "UI_21": {
+    "de": "Ablaufdiagnose ausschalten",
+    "en": "Disable tracing"
+  },
+  "UI_22": {
+    "de": "Ablaufprotokoll als Bericht sammeln",
+    "en": "Collect trace logs into a report"
+  },
+  "UI_23": {
+    "de": "Server und zuk\u00fcnftig gestartete Scanner schreiben getrennte Dateien. Die gemeinsame Zeitleiste kennzeichnet Verschachtelungen, zeitliche \u00dcberschneidungen und fehlende Enden. Eine \u00dcberschneidung beweist keinen SQLite-Schreibkonflikt. Fr\u00fchere Startvorg\u00e4nge und nicht instrumentierte Lesezugriffe bleiben unbekannt. Speichergrenze: etwa 48 MiB rollierende Ablaufprotokolle; gesch\u00fctzte Berichte enthalten eigene Kopien.",
+    "en": "The server and newly started scanners write separate files. The combined timeline identifies nesting, time overlaps and missing end events. An overlap does not prove a SQLite write conflict. Earlier startup operations and uninstrumented reads remain unknown. Storage limit: approximately 48 MiB of rotating trace logs; protected reports contain separate copies."
+  },
+  "UI_24": {
+    "de": "Datenbank pr\u00fcfen",
+    "en": "Check database"
+  },
+  "UI_25": {
+    "de": "Nur lesende Pr\u00fcfung der library.db in einem separaten Prozess. Kein Neustart und keine Reparatur. Ein laufender Scan muss zuerst beendet werden. Eine lange Pr\u00fcfung kann zus\u00e4tzliche Last erzeugen; Zeitlimit: zehn Minuten.",
+    "en": "Read-only check of library.db in a separate process. No restart or repair. Wait for any running scan to finish first. A long check can increase load; time limit: ten minutes."
+  },
+  "UI_26": {
+    "de": "Kennzeichnung",
+    "en": "Label"
+  },
+  "UI_27": {
+    "de": "Manuelle Pr\u00fcfung",
+    "en": "Manual check"
+  },
+  "UI_28": {
+    "de": "Vor einem Scan",
+    "en": "Before a scan"
+  },
+  "UI_29": {
+    "de": "Nach einem Scan",
+    "en": "After a scan"
+  },
+  "UI_30": {
+    "de": "Vor einer Bibliotheksaktualisierung",
+    "en": "Before a library update"
+  },
+  "UI_31": {
+    "de": "Nach einer Bibliotheksaktualisierung",
+    "en": "After a library update"
+  },
+  "UI_32": {
+    "de": "Pr\u00fcfung",
+    "en": "Check"
+  },
+  "UI_33": {
+    "de": "Schnellpr\u00fcfung",
+    "en": "Quick check"
+  },
+  "UI_34": {
+    "de": "Vollst\u00e4ndige Pr\u00fcfung",
+    "en": "Full integrity check"
+  },
+  "UI_35": {
+    "de": "Aktuelle Datenbank mit Backup vergleichen",
+    "en": "Compare current database with backup"
+  },
+  "UI_36": {
+    "de": "Sicherung",
+    "en": "Backup"
+  },
+  "UI_37": {
+    "de": "Bitte ausw\u00e4hlen",
+    "en": "Please select"
+  },
+  "UI_38": {
+    "de": "Pr\u00fcfung starten",
+    "en": "Start check"
+  },
+  "UI_39": {
+    "de": "Der Vergleich prueft beide Datenbanken vollstaendig und vergleicht Tabellen, Spalten, Indizes, Titel-/Albumzahlen sowie Bibliothekszuordnungen anhand exakter Titel-URLs. Unterschiede sind nicht automatisch Beschaedigungen.",
+    "en": "The comparison checks both databases in full and compares tables, columns, indexes, track/album counts and library memberships using exact track URLs. Differences do not automatically indicate corruption."
+  },
+  "UI_40": {
+    "de": "quick_check pr\u00fcft grundlegende Strukturen; integrity_check pr\u00fcft zus\u00e4tzlich unter anderem Tabellen-/Indexkonsistenz und UNIQUE-Bedingungen. Fremdschl\u00fcssel, Musikdateien und inhaltliche Metadatenfehler werden damit nicht vollst\u00e4ndig gepr\u00fcft.",
+    "en": "quick_check checks basic structures; integrity_check also checks table/index consistency and UNIQUE constraints, among other things. Foreign keys, music files and semantic metadata errors are not fully checked."
+  },
+  "UI_41": {
+    "de": "Datenbankpr\u00fcfung l\u00e4uft. Diese Seite aktualisiert sich nach Abschluss.",
+    "en": "Database check in progress. This page will refresh when it finishes."
+  },
+  "UI_42": {
+    "de": "Gesch\u00fctzte Belege und letzte 20 ungesch\u00fctzte Berichte",
+    "en": "Protected evidence and the latest 20 unprotected reports"
+  },
+  "UI_43": {
+    "de": "Einzelbefunde und Vergleich",
+    "en": "Individual findings and comparison"
+  },
+  "UI_44": {
+    "de": "Ablaufbeobachtung",
+    "en": "Trace observation"
+  },
+  "UI_45": {
+    "de": "OK",
+    "en": "OK"
+  },
+  "UI_46": {
+    "de": "Fehler gefunden",
+    "en": "Errors found"
+  },
+  "UI_47": {
+    "de": "Pr\u00fcfung fehlgeschlagen",
+    "en": "Check failed"
+  },
+  "UI_48": {
+    "de": "| Gesch\u00fctzt",
+    "en": "| Protected"
+  },
+  "UI_49": {
+    "de": "Vor automatischer Bereinigung gesch\u00fctzt:",
+    "en": "Protected from automatic cleanup:"
+  },
+  "UI_50": {
+    "de": ". Einschlie\u00dflich gespeicherter Kontext- und Ablaufdaten.",
+    "en": ". Includes saved context and trace data."
+  },
+  "UI_51": {
+    "de": "Bericht dauerhaft aufbewahren",
+    "en": "Keep report permanently"
+  },
+  "UI_52": {
+    "de": "Kennzeichnung:",
+    "en": "Label:"
+  },
+  "UI_53": {
+    "de": "|  Laufzeit:",
+    "en": "|  Duration:"
+  },
+  "UI_54": {
+    "de": "Sekunden",
+    "en": "seconds"
+  },
+  "UI_55": {
+    "de": "Pr\u00fcf-ID:",
+    "en": "Check ID:"
+  },
+  "UI_56": {
+    "de": "Start:",
+    "en": "Start:"
+  },
+  "UI_57": {
+    "de": "Ende:",
+    "en": "End:"
+  },
+  "UI_58": {
+    "de": "Datenbank:",
+    "en": "Database:"
+  },
+  "UI_59": {
+    "de": "Befehl:",
+    "en": "Command:"
+  },
+  "UI_60": {
+    "de": "Inhaltsvergleich:",
+    "en": "Content comparison:"
+  },
+  "UI_61": {
+    "de": "abgeschlossen",
+    "en": "completed"
+  },
+  "UI_62": {
+    "de": "nicht m\u00f6glich",
+    "en": "not possible"
+  },
+  "UI_63": {
+    "de": "Die Integrit\u00e4tsbefunde beider Datenbanken stehen getrennt darunter.",
+    "en": "The integrity findings for each database are shown separately below."
+  },
+  "UI_64": {
+    "de": "Weitere Sch\u00e4den m\u00f6glich; Ausgabe unvollst\u00e4ndig.",
+    "en": "Further damage is possible; output is incomplete."
+  },
+  "UI_65": {
+    "de": "Aktuelle Datenbank",
+    "en": "Current database"
+  },
+  "UI_66": {
+    "de": "Integrit\u00e4tspr\u00fcfung OK",
+    "en": "Integrity check OK"
+  },
+  "UI_67": {
+    "de": "Datenbankbesch\u00e4digung festgestellt",
+    "en": "Database corruption detected"
+  },
+  "UI_68": {
+    "de": "Integrit\u00e4tsfehler gefunden",
+    "en": "Integrity errors found"
+  },
+  "UI_69": {
+    "de": "Fehlercode:",
+    "en": "Error code:"
+  },
+  "UI_70": {
+    "de": "SQLite-Einzelbefunde anzeigen",
+    "en": "Show individual SQLite findings"
+  },
+  "UI_71": {
+    "de": "Entstehung der Sicherung und historischer Kontext",
+    "en": "Backup creation and historical context"
+  },
+  "UI_72": {
+    "de": "Sicherungskonsistenz nicht belegt: Dieser \u00e4ltere Bericht enth\u00e4lt keinen Sicherungsnachweis.",
+    "en": "Backup consistency is not established: this older report contains no backup evidence."
+  },
+  "UI_73": {
+    "de": "Heutige Plugin-Versionen und SQLite-Einstellungen belegen nicht die damaligen Bedingungen beim Erstellen der Sicherung.",
+    "en": "Current plugin versions and SQLite settings do not establish the conditions at the time the backup was created."
+  },
+  "UI_74": {
+    "de": "Schadens\u00fcbersicht",
+    "en": "Damage overview"
+  },
+  "UI_75": {
+    "de": "Indizes:",
+    "en": "Indexes:"
+  },
+  "UI_76": {
+    "de": ". Seiten:",
+    "en": ". Pages:"
+  },
+  "UI_77": {
+    "de": ". Zuordnung von Seiten zu Tabellen nur bei gesichertem Nachweis; hier nicht behauptet.",
+    "en": ". Pages are only mapped to tables when supported by reliable evidence; no such mapping is claimed here."
+  },
+  "UI_78": {
+    "de": "Schadens\u00fcbersicht:",
+    "en": "Damage overview:"
+  },
+  "UI_79": {
+    "de": "Seiten:",
+    "en": "Pages:"
+  },
+  "UI_80": {
+    "de": "Gruppierung nach Seitenverwaltung, Baumstruktur und Indexfehlern sowie belegte Index-/Tabellenzuordnungen im JSON-Protokoll.",
+    "en": "Grouping by page management, tree structure and index errors, plus verified index/table mappings, is available in the JSON report."
+  },
+  "UI_81": {
+    "de": "Gemeinsame Ablaufzeitleiste",
+    "en": "Combined trace timeline"
+  },
+  "UI_82": {
+    "de": "Ereignisse;",
+    "en": "events;"
+  },
+  "UI_83": {
+    "de": "verschachtelte Neuaufbauten;",
+    "en": "nested rebuilds;"
+  },
+  "UI_84": {
+    "de": "prozess\u00fcbergreifende \u00dcberschneidungen;",
+    "en": "cross-process overlaps;"
+  },
+  "UI_85": {
+    "de": "unvollst\u00e4ndige Intervalle.",
+    "en": "incomplete intervals."
+  },
+  "UI_86": {
+    "de": "Zuordnung zur Pr\u00fcfung:",
+    "en": "Attribution to check:"
+  },
+  "UI_87": {
+    "de": ". Ereignisse, Operations-IDs und Aufrufketten im vollst\u00e4ndigen kopierbaren JSON.",
+    "en": ". Events, operation IDs and call stacks are included in the complete, copyable JSON."
+  },
+  "UI_88": {
+    "de": "Pr\u00fcfprotokoll kopieren",
+    "en": "Copy check report"
+  },
+  "UI_89": {
+    "de": "Vollst\u00e4ndiges Diagnoseprotokoll (JSON)",
+    "en": "Complete diagnostic report (JSON)"
+  },
+  "UI_90": {
+    "de": "Noch keine Pr\u00fcfberichte vorhanden.",
+    "en": "No check reports yet."
+  },
+  "UI_91": {
+    "de": "Vollst\u00e4ndige zur\u00fcckgegebene SQLite-Ausgabe ohne Textk\u00fcrzung; Abbr\u00fcche sind gekennzeichnet. Die Ergebnisse beziehen sich auf den Datenstand zu Pr\u00fcfbeginn. Kennzeichnungen dienen dem manuellen Vorher-/Nachher-Vergleich. Das Protokoll unterscheidet LMS- und Diagnoseverbindung und enth\u00e4lt Versionen, aktive Plugins, Prozessdaten sowie Fehlerdetails. Fehlende Angaben werden als unbekannt bzw. mit Erfassungsfehler ausgewiesen.",
+    "en": "Complete SQLite output without text truncation; interruptions are marked. Results refer to the data snapshot at the start of the check. Labels support manual before/after comparisons. The report distinguishes LMS and diagnostic connections and contains versions, enabled plugins, process data and error details. Missing information is marked as unknown or accompanied by a collection error."
+  },
+  "UI_92": {
+    "de": "Datenbankoperationen",
+    "en": "Database operations"
+  },
+  "UI_93": {
+    "de": "Der aktuelle Windows-Helfer erstellt noch keine erweiterten Sicherungsnachweise. F\u00fcr neue Sicherungen mit SHA-256, Dateigr\u00f6\u00dfen und dokumentiertem Dienst-/Scannerzustand ist das Helferupdate auf 0.7.0 erforderlich. Alte Sicherungen bleiben verwendbar; ihre Konsistenz gilt ohne Nachweis als nicht belegt.",
+    "en": "The current Windows helper does not create extended backup evidence. Update the helper to 0.7.0 for new backups with SHA-256, file sizes and documented service/scanner state. Older backups remain usable; without evidence their consistency is not established."
+  },
+  "UI_94": {
+    "de": "F\u00fcr beide Operationen wird LMS kurz gestoppt. Wiedergabe und Oberfl\u00e4che werden unterbrochen.",
+    "en": "Both operations briefly stop LMS. Playback and the web interface will be interrupted."
+  },
+  "UI_95": {
+    "de": "Datenbank sichern:",
+    "en": "Back up database:"
+  },
+  "UI_96": {
+    "de": "Erstellt eine neue Kopie der aktuellen Datenbank samt vorhandenen SQLite-Begleitdateien. Danach startet LMS mit der bisherigen Datenbank; kein Neuaufbau wird angefordert. Die Kopie erscheint unter \u201eGesicherte Datenbanken\u201c und steht f\u00fcr Vergleiche bereit.",
+    "en": "Creates a new copy of the current database and any SQLite sidecar files. LMS then starts with the existing database; no rebuild is requested. The copy appears under \"Saved databases\" and is available for comparisons."
+  },
+  "UI_97": {
+    "de": "Datenbank sichern und neu aufbauen:",
+    "en": "Back up and rebuild database:"
+  },
+  "UI_98": {
+    "de": "Sichert die alte Datenbank, entfernt sie aus dem aktiven Ordner und liest die Bibliothek neu ein. Datenbankinterne Zusatzdaten k\u00f6nnen dabei verloren gehen. Musikdateien und Einstellungen bleiben erhalten.",
+    "en": "Backs up the old database, removes it from the active directory and rescans the library. Additional data stored inside the database may be lost. Music files and settings are preserved."
+  },
+  "UI_99": {
+    "de": "F\u00fcr \u201eDatenbank sichern\u201c bitte den Windows-Helfer auf 0.7.0 aktualisieren.",
+    "en": "Update the Windows helper to 0.7.0 to use \"Back up database\"."
+  },
+  "UI_100": {
+    "de": "Operation",
+    "en": "Operation"
+  },
+  "UI_101": {
+    "de": "Datenbank sichern und neu aufbauen",
+    "en": "Back up and rebuild database"
+  },
+  "UI_102": {
+    "de": "Datenbank sichern",
+    "en": "Back up database"
+  },
+  "UI_103": {
+    "de": "Operation starten",
+    "en": "Start operation"
+  },
+  "UI_104": {
+    "de": "Gesicherte Datenbanken",
+    "en": "Saved databases"
+  },
+  "UI_105": {
+    "de": "Bytes)",
+    "en": "bytes)"
+  },
+  "UI_106": {
+    "de": "Keine Sicherungen vorhanden.",
+    "en": "No backups available."
+  },
+  "UI_107": {
+    "de": "Ausgew\u00e4hlte Sicherung l\u00f6schen",
+    "en": "Delete selected backup"
+  },
+  "UI_108": {
+    "de": "Bitte JavaScript aktivieren, um die Aktionen mit Best\u00e4tigungsdialog zu verwenden.",
+    "en": "Enable JavaScript to use actions with confirmation dialogs."
+  },
+  "MSG_0": {
+    "de": "Bitte Aktion bestaetigen",
+    "en": "Please confirm the action"
+  },
+  "MSG_1": {
+    "de": "Bitte Pr\u00fcfung best\u00e4tigen",
+    "en": "Please confirm the check"
+  },
+  "MSG_2": {
+    "de": "Diagnoseeinstellung gespeichert.",
+    "en": "Diagnostic settings saved."
+  },
+  "MSG_3": {
+    "de": "Datenbankpr\u00fcfung gestartet. Das Ergebnis erscheint nach Abschluss.",
+    "en": "Database check started. The result will appear when it finishes."
+  },
+  "MSG_4": {
+    "de": "Auftrag angenommen. Der Windows-Helfer startet innerhalb von etwa einer Minute.",
+    "en": "Request accepted. The Windows helper will start within about one minute."
+  },
+  "MSG_5": {
+    "de": "Ungueltige Pruef-ID",
+    "en": "Invalid check ID"
+  },
+  "MSG_6": {
+    "de": "Ablaufbericht nicht aus aktiver Bibliotheksoperation erstellen",
+    "en": "Cannot create a trace report inside an active library operation"
+  },
+  "MSG_7": {
+    "de": "Beobachtungsprotokoll; keine Integritaetspruefung. Fehlende Ende-Ereignisse bleiben unvollstaendig.",
+    "en": "Observation report, not an integrity check. Missing end events remain incomplete."
+  },
+  "MSG_8": {
+    "de": "Bitte eine g\u00fcltige Sicherung ausw\u00e4hlen",
+    "en": "Please select a valid backup"
+  },
+  "MSG_9": {
+    "de": "Sicherung nicht im aktuellen Katalog",
+    "en": "Backup is not in the current catalog"
+  },
+  "MSG_10": {
+    "de": "Helferkonfiguration f\u00fcr Sicherungspfad nicht lesbar:",
+    "en": "Cannot read helper configuration for backup path:"
+  },
+  "MSG_11": {
+    "de": "Helferkonfiguration geh\u00f6rt zu einem anderen LMS-Cache",
+    "en": "Helper configuration belongs to a different LMS cache"
+  },
+  "MSG_12": {
+    "de": "Sicherungsordner nicht erreichbar",
+    "en": "Backup directory is unavailable"
+  },
+  "MSG_13": {
+    "de": "Sicherungsdatenbank fehlt oder ist nicht lesbar",
+    "en": "Backup database is missing or unreadable"
+  },
+  "MSG_14": {
+    "de": "Unbekannte Pr\u00fcfung",
+    "en": "Unknown check"
+  },
+  "MSG_15": {
+    "de": "Pruefung nicht innerhalb einer aktiven Bibliotheksoperation starten",
+    "en": "Cannot start a check inside an active library operation"
+  },
+  "MSG_16": {
+    "de": "Ung\u00fcltige Kennzeichnung",
+    "en": "Invalid label"
+  },
+  "MSG_17": {
+    "de": "Ein Auftrag oder Scan l\u00e4uft bereits",
+    "en": "A request or scan is already running"
+  },
+  "MSG_18": {
+    "de": "F\u00fcr die Diagnose ist ein Perl-Interpreter erforderlich",
+    "en": "A Perl interpreter is required for diagnostics"
+  },
+  "MSG_19": {
+    "de": "Diagnoseprozess konnte nicht gestartet werden",
+    "en": "Could not start diagnostic process"
+  },
+  "MSG_20": {
+    "de": "Auftrag bereits vorhanden oder Ordner nicht beschreibbar:",
+    "en": "Request already exists or directory is not writable:"
+  },
+  "MSG_21": {
+    "de": "Auftrag konnte nicht geschrieben werden:",
+    "en": "Could not write request:"
+  },
+  "MSG_22": {
+    "de": "Auftrag konnte nicht geschlossen werden:",
+    "en": "Could not close request file:"
+  },
+  "MSG_23": {
+    "de": "Unbekannte Aktion.",
+    "en": "Unknown action."
+  },
+  "MSG_24": {
+    "de": "Aktion wurde nicht best\u00e4tigt.",
+    "en": "Action was not confirmed."
+  },
+  "MSG_25": {
+    "de": "Bitte Windows-Helfer auf Version 0.7.0 aktualisieren.",
+    "en": "Please update the Windows helper to version 0.7.0."
+  },
+  "MSG_26": {
+    "de": "Windows-Helfer nicht erreichbar. Installation pr\u00fcfen.",
+    "en": "Windows helper is unavailable. Check the installation."
+  },
+  "MSG_27": {
+    "de": "Bitte Windows-Helfer auf Version 0.2.0 aktualisieren.",
+    "en": "Please update the Windows helper to version 0.2.0."
+  },
+  "MSG_28": {
+    "de": "Ung\u00fcltige Sicherung.",
+    "en": "Invalid backup."
+  },
+  "MSG_29": {
+    "de": "LMS hat den Scan abgelehnt",
+    "en": "LMS rejected the scan"
+  },
+  "MSG_30": {
+    "de": "Pr\u00fcfung durch LMS-Beendigung abgebrochen.",
+    "en": "Check interrupted because LMS is shutting down."
+  },
+  "MSG_31": {
+    "de": "Kein Nachweis der Schadensursache.",
+    "en": "No evidence of the cause of damage."
+  },
+  "MSG_32": {
+    "de": "Weitere Schaeden moeglich; Ausgabe unvollstaendig.",
+    "en": "Further damage is possible; output is incomplete."
+  },
+  "MSG_33": {
+    "de": "Sicherungskonsistenz nicht belegt",
+    "en": "Backup consistency is not established"
+  },
+  "MSG_34": {
+    "de": "Zeitlimit fuer Nachweispruefung erreicht",
+    "en": "Time limit reached while verifying backup evidence"
+  },
+  "MSG_35": {
+    "de": "Sicherungsablauf dokumentiert und gespeicherte Pruefsummen stimmen. Kein Beweis fuer logische Fehlerfreiheit.",
+    "en": "Backup procedure documented and stored checksums match. This does not prove logical integrity."
+  },
+  "MSG_36": {
+    "de": "Sicherungskonsistenz nicht belegt: Dateien fehlen oder weichen von gespeicherten Pruefsummen ab.",
+    "en": "Backup consistency is not established: files are missing or differ from stored checksums."
+  },
+  "MSG_37": {
+    "de": "LMS synchronous=OFF: geringere Absicherung bei System- oder Stromausfall; kein Nachweis eines Plugin-Konflikts. Einstellung unveraendert.",
+    "en": "LMS synchronous=OFF: reduced protection against system or power failure; not evidence of a plugin conflict. Setting unchanged."
+  },
+  "MSG_38": {
+    "de": "Kontext beim Erstellen der Sicherung, separat vom heutigen Pruefkontext.",
+    "en": "Context at backup creation, separate from today's check context."
+  },
+  "MSG_39": {
+    "de": "Historischer Plugin-/SQLite-Kontext nicht dokumentiert; heutige Werte beschreiben nicht den damaligen Zustand.",
+    "en": "Historical plugin/SQLite context is not documented; current values do not describe the state at that time."
+  },
+  "MSG_40": {
+    "de": "Vergleich unvollstaendig: Mindestens eine Datenbank konnte nicht vollstaendig gelesen werden. Einzelpruefungen siehe JSON.",
+    "en": "Comparison incomplete: at least one database could not be fully read. See JSON for the individual checks."
+  },
+  "MSG_41": {
+    "de": "Datenbankschema unterscheidet sich.",
+    "en": "Database schemas differ."
+  },
+  "MSG_42": {
+    "de": "Datenbankschema stimmt ueberein.",
+    "en": "Database schemas match."
+  },
+  "MSG_43": {
+    "de": "OK beschreibt die Integritaet; Bestandsunterschiede sind nicht automatisch Datenbankfehler.",
+    "en": "OK describes integrity; differences in contents are not automatically database errors."
+  },
+  "MSG_44": {
+    "de": "Zeitliche Ueberschneidung ist kein nachgewiesener SQLite-Schreibkonflikt. Protokollierung beginnt erst nach Instrumentierung, ist begrenzt und kann Luecken haben.",
+    "en": "A time overlap is not a proven SQLite write conflict. Logging starts only after instrumentation, is bounded and may have gaps."
+  },
+  "MSG_45": {
+    "de": "Datenbank zurueckgesetzt, aber Scanstart fehlgeschlagen. LMS-Scannerprotokoll pruefen und Scan manuell starten.",
+    "en": "Database reset, but the scan could not be started. Check the LMS scanner log and start the scan manually."
+  },
+  "MSG_46": {
+    "de": "Datenbank zurueckgesetzt. LMS meldet den Scan als beendet. Titelzahl und Scannerprotokoll auf Importfehler pruefen.",
+    "en": "Database reset. LMS reports that the scan has finished. Check the track count and scanner log for import errors."
+  },
+  "MSG_47": {
+    "de": "Neuaufbau gestartet; warte auf LMS-Scanende. Bei ausbleibendem Abschluss Scannerprotokoll pruefen.",
+    "en": "Rebuild started; waiting for the LMS scan to finish. Check the scanner log if it does not complete."
+  },
+  "MSG_48": {
+    "de": "Datenbank entfernt; warte auf Scanstart durch das DB-Repair-Plugin. Falls LMS nicht erreichbar wird, Dienst und Plugin vor Ort pruefen.",
+    "en": "Database removed; waiting for DB Repair to start the scan. If LMS remains unavailable, check the service and plugin on the server."
+  },
+  "MSG_49": {
+    "de": "Ausgewaehlte Sicherung endgueltig geloescht.",
+    "en": "Selected backup permanently deleted."
+  },
+  "MSG_50": {
+    "de": "LMS-Dienst laeuft nicht. Neustart nicht gestartet.",
+    "en": "LMS service is not running. Restart was not started."
+  },
+  "MSG_51": {
+    "de": "LMS wird neu gestartet. Wiedergabe und Oberflaeche werden kurz unterbrochen.",
+    "en": "LMS is restarting. Playback and the web interface will be briefly interrupted."
+  },
+  "MSG_52": {
+    "de": "LMS-Dienst neu gestartet. Die Weboberflaeche wird wieder erreichbar, sobald LMS fertig gestartet ist.",
+    "en": "LMS service restarted. The web interface will return when LMS finishes starting."
+  },
+  "MSG_53": {
+    "de": "LMS-Dienst laeuft nicht. Reset nicht gestartet.",
+    "en": "LMS service is not running. Reset was not started."
+  },
+  "MSG_54": {
+    "de": "LMS wird gestoppt. Wiedergabe und Oberflaeche werden unterbrochen.",
+    "en": "LMS is stopping. Playback and the web interface will be interrupted."
+  },
+  "MSG_55": {
+    "de": "Scanner laeuft noch. Reset abgebrochen; auf Scanende warten.",
+    "en": "Scanner is still running. Reset cancelled; wait for the scan to finish."
+  },
+  "MSG_56": {
+    "de": "Ein vorheriger Auftrag wurde unterbrochen. working.json und Sicherungen vor Ort pruefen; kein automatischer Wiederholungsversuch.",
+    "en": "A previous request was interrupted. Check working.json and backups on the server; no automatic retry."
+  },
+  "MSG_57": {
+    "de": "Neuaufbau noch aktiv; kein weiterer Auftrag erlaubt.",
+    "en": "Rebuild is still active; no further request is allowed."
+  },
+  "MSG_58": {
+    "de": "Unbekannter Auftrag.",
+    "en": "Unknown request."
+  },
+  "MSG_59": {
+    "de": "Auftrag abgelaufen. request.json vor Ort pruefen und entfernen.",
+    "en": "Request expired. Inspect and remove request.json on the server."
+  },
+  "MSG_60": {
+    "de": "LMS-Prozess noch aktiv. Keine Datenbank entfernt.",
+    "en": "An LMS process is still running. No database was removed."
+  },
+  "MSG_61": {
+    "de": "Nur lokale Pfade sind erlaubt.",
+    "en": "Only local paths are allowed."
+  },
+  "MSG_62": {
+    "de": "Verknuepfung/Junction nicht erlaubt:",
+    "en": "Symbolic link or junction not allowed:"
+  },
+  "MSG_63": {
+    "de": "Pfad ausserhalb des erlaubten Ordners:",
+    "en": "Path is outside the allowed directory:"
+  },
+  "MSG_64": {
+    "de": "Diese Version unterstuetzt ausschliesslich library.db.",
+    "en": "This version supports library.db only."
+  },
+  "MSG_65": {
+    "de": "Alte squeezebox.db vorhanden: automatische LMS-Migration vor Reset klaeren.",
+    "en": "An old squeezebox.db exists: check automatic LMS migration before resetting."
+  },
+  "MSG_66": {
+    "de": "Keine Datei:",
+    "en": "Not a file:"
+  },
+  "MSG_67": {
+    "de": "Keine Musikordner konfiguriert.",
+    "en": "No music folders configured."
+  },
+  "MSG_68": {
+    "de": "Musikordner nicht erreichbar:",
+    "en": "Music folder is unavailable:"
+  },
+  "MSG_69": {
+    "de": "Musikordner ist leer:",
+    "en": "Music folder is empty:"
+  },
+  "MSG_70": {
+    "de": "Ungueltige Sicherungs-ID.",
+    "en": "Invalid backup ID."
+  },
+  "MSG_71": {
+    "de": "library.db fehlt. Kein Reset ausgefuehrt.",
+    "en": "library.db is missing. No reset performed."
+  },
+  "MSG_72": {
+    "de": "Sicherung nicht gefunden.",
+    "en": "Backup not found."
+  },
+  "MSG_73": {
+    "de": "Unerwarteter Inhalt in Sicherung. Loeschen abgebrochen.",
+    "en": "Unexpected backup contents. Deletion cancelled."
+  },
+  "MSG_74": {
+    "de": "manual",
+    "en": "Manual"
+  },
+  "MSG_75": {
+    "de": "before_scan",
+    "en": "Before a scan"
+  },
+  "MSG_76": {
+    "de": "after_scan",
+    "en": "After a scan"
+  },
+  "MSG_77": {
+    "de": "before_update",
+    "en": "Before a library update"
+  },
+  "MSG_78": {
+    "de": "after_update",
+    "en": "After a library update"
+  },
+  "MSG_79": {
+    "de": "reference_healthy",
+    "en": "Healthy reference"
+  },
+  "MSG_80": {
+    "de": "first_failure",
+    "en": "First failed check"
+  },
+  "MSG_81": {
+    "de": "original",
+    "en": "Current database"
+  },
+  "MSG_82": {
+    "de": "backup",
+    "en": "Backup"
+  },
+  "MSG_83": {
+    "de": "quick_check",
+    "en": "Quick check"
+  },
+  "MSG_84": {
+    "de": "integrity_check",
+    "en": "Full integrity check"
+  },
+  "MSG_85": {
+    "de": "compare",
+    "en": "Comparison"
+  },
+  "MSG_86": {
+    "de": "trace",
+    "en": "Trace"
+  },
+  "MSG_87": {
+    "de": "observed_time_interval_only",
+    "en": "Observed time interval only"
+  },
+  "MSG_88": {
+    "de": "ambiguous_incomplete_intervals",
+    "en": "Ambiguous: incomplete intervals"
+  },
+  "LABEL_manual": {
+    "de": "Manuell",
+    "en": "Manual"
+  },
+  "LABEL_before_scan": {
+    "de": "Vor einem Scan",
+    "en": "Before a scan"
+  },
+  "LABEL_after_scan": {
+    "de": "Nach einem Scan",
+    "en": "After a scan"
+  },
+  "LABEL_before_update": {
+    "de": "Vor Bibliotheksaktualisierung",
+    "en": "Before a library update"
+  },
+  "LABEL_after_update": {
+    "de": "Nach Bibliotheksaktualisierung",
+    "en": "After a library update"
+  },
+  "LABEL_reference_healthy": {
+    "de": "Gesunder Referenzlauf",
+    "en": "Healthy reference"
+  },
+  "LABEL_first_failure": {
+    "de": "Erster fehlerhafter Lauf",
+    "en": "First failed check"
+  },
+  "LABEL_original": {
+    "de": "Aktuelle Datenbank",
+    "en": "Current database"
+  },
+  "LABEL_backup": {
+    "de": "Sicherung",
+    "en": "Backup"
+  },
+  "LABEL_quick_check": {
+    "de": "Schnellpr\u00fcfung",
+    "en": "Quick check"
+  },
+  "LABEL_integrity_check": {
+    "de": "Vollst\u00e4ndige Pr\u00fcfung",
+    "en": "Full integrity check"
+  },
+  "LABEL_compare": {
+    "de": "Vergleich",
+    "en": "Comparison"
+  },
+  "LABEL_trace": {
+    "de": "Ablaufdiagnose",
+    "en": "Trace"
+  },
+  "LABEL_observed_time_interval_only": {
+    "de": "Nur beobachtetes Zeitintervall",
+    "en": "Observed time interval only"
+  },
+  "LABEL_ambiguous_incomplete_intervals": {
+    "de": "Mehrdeutig: unvollst\u00e4ndige Intervalle",
+    "en": "Ambiguous: incomplete intervals"
+  },
+  "MSG_INTERRUPTED": {
+    "de": "Diagnose abgebrochen: Zeitlimit oder Prozessfehler. Kein erfolgreiches Pr\u00fcfergebnis.",
+    "en": "Diagnostic check interrupted: time limit or process error. No successful check result."
+  }
+}
