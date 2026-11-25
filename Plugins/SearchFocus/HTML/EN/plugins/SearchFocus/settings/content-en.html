@@ -1,0 +1,58 @@
+[% BLOCK help %]<span class="sf-help"><button type="button" aria-label="Help: [% label %]" aria-describedby="sf-tip-[% id %]">?</button><span class="sf-tip" role="tooltip" id="sf-tip-[% id %]">[% content %]</span></span>[% END %]
+<div id="searchfocus-panel">
+[% IF settingsError %]<div class="sf-warning" role="alert">[% settingsError | html %] Changes were not saved.</div>[% END %]
+<div class="settingGroup">
+ <h2>Search Focus <small>[% focusState.version | html %]</small></h2>
+ [% IF !focusState.fulltext %]
+ <div class="sf-warning" role="alert"><strong>Full Text Search is disabled. Search Focus cannot filter tracks, albums or artists.</strong><br>Enable Full Text Search under <a href="[% webroot %]/settings/server/plugins.html">Plugins</a>, save and restart LMS. These categories currently use the standard LMS search. The separate genre extension does not require Full Text Search. Test results do not confirm an active client connection.</div>
+ [% ELSIF !focusState.supported %]
+ <div class="sf-warning" role="alert"><strong>This LMS version is not supported.</strong> Search Focus is not connected to client search.</div>
+ [% ELSIF !focusState.hook %]
+ <div class="sf-warning" role="alert"><strong>Search Focus is not connected to client search.</strong> Please restart LMS.</div>
+ [% ELSIF focus.enabled %]<p class="sf-status">Search Focus is active for client searches.</p>
+ [% ELSE %]<p class="sf-status">Original search is active. Search Focus is used only in the test search.</p>[% END %]
+ [% IF focusState.scanning %]<p>A library scan is running.</p>[% END %]
+ [% IF focusState.error %]<div class="sf-warning" role="alert">[% focusState.error | html %]</div>[% END %]
+ <p><label><input type="checkbox" name="pref_enabled" value="1" [% IF focus.enabled %]checked[% END %]> Use Search Focus for normal LMS searches</label>
+ [% PROCESS help id='enabled' label='Client search' content='Search Focus uses the existing full-text index, verifies selected fields and ranks results. Disabling it restores the original search. Changes apply after saving without rebuilding the index. Music files and the index remain unchanged.' %]</p>
+ <p><label>Match words <select name="pref_mode"><option value="and" [% IF focus.mode == 'and' %]selected[% END %]>AND - all words</option><option value="or" [% IF focus.mode == 'or' %]selected[% END %]>OR - at least one word</option></select></label>
+ [% PROCESS help id='mode' label='Word matching' content='AND requires every search word in enabled fields. OR requires at least one. In track/album searches a similarity bonus alone does not satisfy AND. The separate tolerant name search accepts matching aliases, initials and typos; genre search requires all query words.' %]</p>
+ <fieldset><legend>Search fields</legend><div class="sf-fields">
+ [% fields = [ ['title','Track title','Also work titles in work searches.'], ['album','Album name','Used in album and track searches. An album does not match merely because an included track title matches.'], ['artist','Artists / contributors','Used in artist, album, track and work searches.'], ['playlist','Playlist name','Names only, not playlist contents. Clients may still sort playlists alphabetically.'], ['genre','Genre in track search','An additional track field. Configure the separate genre search below.'], ['lyrics','Lyrics','Lyrics for tracks and their albums. May slow down searches. Full lyrics are never displayed in the preview.'], ['comment','Comments','Comments for tracks and their albums. May slow down searches.'] ] %]
+ [% FOREACH field IN fields %]<div class="sf-field"><label><input type="checkbox" name="pref_[% field.0 %]" value="1" [% IF focus.${field.0} %]checked[% END %]> [% field.1 %]</label>[% PROCESS help id=field.0 label=field.1 content=field.2 %]</div>[% END %]
+ </div></fieldset>
+ <fieldset><legend>Name search</legend>
+ <p><label><input type="checkbox" name="pref_name_fuzzy" value="1" [% IF focus.name_fuzzy %]checked[% END %]> Tolerant name search</label>
+ [% PROCESS help id='name-fuzzy' label='Name search' content='Finds new artist/contributor results using typos and initials, e.g. f. Chonpin. Applies to the artist category and direct artist queries, not track or album fields. Case is ignored. One edit in words of at least four characters: 60%; prefix: 80%; initial: 25%. An initial alone does not expand results. AND/OR still applies. Requires the full-text connection and the Artists search field.' %]</p>
+ <details><summary>Edit person-specific aliases</summary>
+ <p><label for="sf-name-aliases">Library name | Family name (optional) | Aliases separated by semicolons</label>
+ [% PROCESS help id='name-aliases' label='Name aliases' content='One mapping per line. Example: Fryderyk Chopin | Chopin | Fr&#233;d&#233;ric Chopin; Frederik Chopin. The target must match an existing library name. The family name must occur in every alias. Leave it empty for bands or stage names. Explicit family names receive 1,000 word points, other parts 250. Without a mapping all words receive 1,000. Full name: +100,000; each additional matching word: +2,000. Aliases receive 90% of the total. Artists are never merged automatically. Maximum 100 entries and 12 aliases per entry. Lines beginning with # are comments.' %]</p>
+ <textarea id="sf-name-aliases" name="pref_name_aliases" rows="7" maxlength="32000" style="width:95%;font-family:monospace;background:#fff;color:#202830">[% nameAliasesValue | html %]</textarea>
+ </details>
+ </fieldset>
+ <fieldset><legend>Client genre search</legend>
+ <p><label><input type="checkbox" name="pref_genre_fuzzy" value="1" [% IF focus.genre_fuzzy %]checked[% END %]> Recognize typos and alternative spellings</label>
+ [% PROCESS help id='genre-fuzzy' label='Tolerant genre search' content='Applies to direct genre searches and the genre category of general search. classic, klassic and klassik are equivalent. One edit in words of at least four characters receives 60%. Prefixes remain searchable. Uses the genre list, not a full-text index. The main Search Focus switch must be enabled.' %]</p>
+ <p><label><input type="checkbox" name="pref_genre_hide_mixed" value="1" [% IF focus.genre_hide_mixed %]checked[% END %]> Show compound genres only when explicitly searched</label>
+ [% PROCESS help id='genre-mixed' label='Compound genres' content='Enabled: Klassik does not match Klassik-Jazz; classic jazz matches it explicitly. Disabled: standalone genre 1,000 points, first component 800, later components 400; explicitly searched compound 1,000. Typos reduce word quality to 60%. Separators are hyphens, plus signs, slashes and &amp;. Spaces between known genre components (e.g. Classic Rock) also count as compounds: a fixed list, not semantic analysis. Multiple separate genre tags are unaffected. Opening a genre directly is unchanged. This switch applies while tolerant genre search is enabled.' %]</p>
+ [% IF focusState.genre_hook && focus.enabled && focus.genre_fuzzy %]<p>Genre search connection is active.</p>[% ELSE %]<p>Genre extension is inactive. After installation, restart LMS and enable Search Focus and tolerant genre search.</p>[% END %]
+ </fieldset>
+ <div class="sf-tools">
+ <span>Word and field points [% PROCESS help id='points' label='Word and field points' content='German articles and possessive forms receive 100 word points. Other words receive 1,000, or 1,200 if capitalized in the query. Articles and possessives stay at 100. These are fixed German lists, not grammatical analysis; switching the interface language does not change ranking.<br><br>Field points per word: title, album, artist and playlist 100; genre 20; lyrics 5; comments 3. Only the strongest field counts. Each additional regular word match: +2,000. A complete exact name/title: +100,000. Tolerant name search uses its own scoring described above.' %]</span>
+ <span>Similarity [% PROCESS help id='similarity' label='Similarity' content='A missing search word receives 60% of its word points for exactly one insertion, deletion, substitution or adjacent transposition. Both words must contain at least four characters. Example: meine &#8776; deine = +60.<br><br>This bonus only ranks existing track/album results; it does not find new results for a typo-only query. No double counting or extra field/multiword points. No semantic analysis or translation. Separate tolerant name and genre searches can find new results.' %]</span>
+ <span>Search rules [% PROCESS help id='rules' label='Search rules' content='Word prefixes match regardless of case and accents. Punctuation, minus signs and quotation marks are separators, not operators. Maximum 12 words and 256 characters. File paths, technical metadata and customsearch fields are excluded.' %]</span>
+ </div>
+ <p><button type="submit" name="resetDefaults" value="1">Restore defaults</button></p>
+</div>
+<div class="settingGroup">
+ <h3>Test search [% PROCESS help id='test' label='Test search' content='Saves settings and displays up to 30 results per category. The genre preview always uses the new scoring even when its client connection is disabled. No client/library filters are applied here; normal LMS searches retain their filters. The preview can read an existing index without an active client connection. Repeated results may be cached for up to five seconds.' %]</h3>
+ <p><input class="sf-query" aria-label="Test search query" type="text" name="testQuery" maxlength="256" value="[% testQuery | html %]"> <button type="submit" name="testSearch" value="1">Save and test</button></p>
+ [% IF testError %]<div class="sf-warning" role="alert">[% testError | html %]</div>[% END %]
+ [% FOREACH group IN testGroups %]
+ <h4>[% group.name | html %] - [% group.total %] results <small>([% group.ms %] ms, [% group.candidates %] candidates)</small></h4>
+ <table class="sf-results"><thead><tr><th>Name</th><th>Explanation</th><th>Points</th></tr></thead><tbody>
+ [% FOREACH row IN group.rows %]<tr><td>[% row.label | html %]</td><td>[% row.reason | html %]</td><td>[% row.score %]</td></tr>[% END %]
+ </tbody></table>
+ [% END %]
+</div>
+</div>

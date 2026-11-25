@@ -1,0 +1,7 @@
+PLUGIN_SEARCHFOCUS
+	DE	Search Focus
+	EN	Search Focus
+
+PLUGIN_SEARCHFOCUS_DESC
+	DE	Konfigurierbare Suchfelder für die vorhandene Volltextsuche. Lyrics und Kommentare standardmäßig aus.
+	EN	Configurable fields for the existing full-text search. Lyrics and comments disabled by default.

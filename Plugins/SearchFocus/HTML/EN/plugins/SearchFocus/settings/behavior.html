@@ -1,0 +1,21 @@
+<script>
+(function () {
+ function align(box) { var tip=box.querySelector('.sf-tip'); tip.style.left='0px'; var r=tip.getBoundingClientRect(); if(r.right > window.innerWidth-12) tip.style.left=Math.min(0,window.innerWidth-12-r.right)+'px'; }
+ var helpers = document.querySelectorAll('#searchfocus-panel .sf-help');
+ for (var i = 0; i < helpers.length; i++) {
+  var helper = helpers[i], button = helper.querySelector('button');
+  helper.addEventListener('mouseenter', function () { this.classList.remove('sf-dismiss'); align(this); });
+  button.addEventListener('focus', function () { this.parentNode.classList.remove('sf-dismiss'); align(this.parentNode); });
+  button.addEventListener('click', function () {
+   var box = this.parentNode, wasOpen = box.classList.contains('sf-open');
+   box.classList.toggle('sf-open', !wasOpen); box.classList.toggle('sf-dismiss', wasOpen); align(box);
+  });
+ }
+ document.addEventListener('keydown', function (event) {
+  if (event.key === 'Escape') for (var i = 0; i < helpers.length; i++) { helpers[i].classList.remove('sf-open'); helpers[i].classList.add('sf-dismiss'); }
+ });
+ document.addEventListener('click', function (event) {
+  for (var i = 0; i < helpers.length; i++) if (!helpers[i].contains(event.target)) { helpers[i].classList.remove('sf-open'); }
+ });
+}());
+</script>

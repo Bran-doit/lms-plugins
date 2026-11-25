@@ -31,6 +31,8 @@ jobs:
         run: |
           prove tests/dbrepair-*.t
           node tests/dbrepair-i18n.cjs
+      - name: Test Search Focus
+        run: prove tests/searchfocus-*.t
       - name: Build and publish plugins and repository index
         env:
           GH_TOKEN: ${{ github.token }}

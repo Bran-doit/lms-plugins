@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension>
+ <id>32a44cad-061b-4cc7-a32c-eed8c5349631</id>
+ <name>SearchFocus</name><title lang="DE">Search Focus</title><title lang="EN">Search Focus</title>
+ <module>Plugins::SearchFocus::Plugin</module><importmodule>Plugins::SearchFocus::Plugin</importmodule>
+ <version>0.6.0</version>
+ <desc lang="DE">Konfigurierbare Suchfelder, gewichtete Treffer sowie tolerante Namens- und Genresuche.</desc>
+ <desc lang="EN">Configurable search fields, ranked results, and tolerant name and genre searches.</desc>
+ <creator>Bran-doit</creator><category>scanning</category>
+ <link>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/SearchFocus</link>
+ <homepageURL>https://github.com/Bran-doit/lms-plugins/tree/main/Plugins/SearchFocus</homepageURL>
+ <optionsURL>plugins/SearchFocus/settings/basic.html</optionsURL>
+ <defaultState>enabled</defaultState><type>2</type>
+ <targetApplication><id>LogitechMediaServer</id><minVersion>9.0.3</minVersion><maxVersion>9.0.3</maxVersion></targetApplication>
+</extension>
