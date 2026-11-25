@@ -10,7 +10,7 @@ Unter **Einstellungen → Plugins → Zusätzliche Repositories** diese Adresse 
 https://github.com/Bran-doit/lms-plugins/releases/download/repository/repo.xml
 ```
 
-Radio Stations, Lyric-Translator oder DB Repair auswählen und den Installationshinweisen von LMS folgen.
+Radio Stations, Lyric-Translator, DB Repair oder Search Focus auswählen und den Installationshinweisen von LMS folgen.
 
 ### Radio Stations
 
@@ -23,6 +23,10 @@ Lokale Liedtextübersetzung in acht Sprachen mit automatischer Spracherkennung, 
 ### DB Repair
 
 Datenbankdiagnosen, Sicherung und Neuaufbau sowie Dienstneustart für **LMS als Windows-Dienst**. Der Windows-Helfer muss separat administrativ eingerichtet werden. [Anleitung](Plugins/DBRepair/README.md) · [Änderungsverlauf](Plugins/DBRepair/CHANGELOG.md).
+
+### Search Focus
+
+Konfigurierbare Suchfelder sowie tolerante Namens- und Genresuche mit gewichteten Treffern. Oberfläche auf Deutsch oder Englisch. Für **LMS 9.0.3**; Titel-/Interpretenintegration benötigt die Volltextsuche. [English](Plugins/SearchFocus/README.md) · [Deutsch](Plugins/SearchFocus/README.de.md) · [Änderungsverlauf](Plugins/SearchFocus/CHANGELOG.md).
 
 ## Updates veröffentlichen
 

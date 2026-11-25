@@ -25,10 +25,12 @@ jobs:
       - name: Test Radio Stations
         run: |
           sudo apt-get update
-          sudo apt-get install -y libjson-xs-perl liburi-perl libdbd-sqlite3-perl
+          sudo apt-get install -y libjson-xs-perl liburi-perl libdbd-sqlite3-perl libtemplate-perl
           prove tests/radiostations-*.t
       - name: Test DB Repair diagnostics
         run: prove tests/dbrepair-*.t
+      - name: Test Search Focus
+        run: prove tests/searchfocus-*.t
       - name: Build and publish plugins and repository index
         env:
           GH_TOKEN: ${{ github.token }}

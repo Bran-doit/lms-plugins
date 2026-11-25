@@ -1,0 +1,1 @@
+Search Focus uses LMS APIs and the installed Perl/SQLite runtime. No LMS source, runtime binaries, music metadata, saved user preferences or third-party libraries are bundled. Runtime dependencies retain their original licenses.

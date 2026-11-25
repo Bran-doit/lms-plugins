@@ -1,0 +1,58 @@
+[% BLOCK help %]<span class="sf-help"><button type="button" aria-label="Hilfe: [% label %]" aria-describedby="sf-tip-[% id %]">?</button><span class="sf-tip" role="tooltip" id="sf-tip-[% id %]">[% content %]</span></span>[% END %]
+<div id="searchfocus-panel">
+[% IF settingsError %]<div class="sf-warning" role="alert">[% settingsError | html %] &#196;nderungen wurden nicht gespeichert.</div>[% END %]
+<div class="settingGroup">
+ <h2>Search Focus <small>[% focusState.version | html %]</small></h2>
+ [% IF !focusState.fulltext %]
+ <div class="sf-warning" role="alert"><strong>Volltextsuche ist deaktiviert &#8211; Search Focus kann Titel, Alben und Interpreten nicht filtern.</strong><br>Bitte unter <a href="[% webroot %]/settings/server/plugins.html">Plugins</a> die Volltextsuche aktivieren, speichern und LMS neu starten. F&#252;r diese Kategorien verwendet LMS seine Standardsuche. Die separate Genre-Erweiterung ben&#246;tigt keine Volltextsuche. Ergebnisse der Testsuche best&#228;tigen keine aktive Client-Anbindung.</div>
+ [% ELSIF !focusState.supported %]
+ <div class="sf-warning" role="alert"><strong>Diese LMS-Version wird nicht unterst&#252;tzt.</strong> Search Focus ist nicht an die Client-Suche angebunden.</div>
+ [% ELSIF !focusState.hook %]
+ <div class="sf-warning" role="alert"><strong>Search Focus ist nicht an die Client-Suche angebunden.</strong> Bitte LMS neu starten.</div>
+ [% ELSIF focus.enabled %]<p class="sf-status">Search Focus ist f&#252;r die Client-Suche aktiv.</p>
+ [% ELSE %]<p class="sf-status">Originalsuche aktiv. Search Focus wird nur in der Testsuche verwendet.</p>[% END %]
+ [% IF focusState.scanning %]<p>Bibliotheksscan l&#228;uft.</p>[% END %]
+ [% IF focusState.error %]<div class="sf-warning" role="alert">[% focusState.error | html %]</div>[% END %]
+ <p><label><input type="checkbox" name="pref_enabled" value="1" [% IF focus.enabled %]checked[% END %]> Search Focus f&#252;r die normale LMS-Suche verwenden</label>
+ [% PROCESS help id='enabled' label='Client-Suche' content='Search Focus verwendet den vorhandenen Volltextindex, pr&#252;ft nur die gew&#228;hlten Felder und bewertet die Treffer. Ausschalten stellt die Originalsuche wieder her. &#196;nderungen gelten nach Speichern ohne Indexneuaufbau. Musikdateien und Index bleiben unver&#228;ndert.' %]</p>
+ <p><label>Wortverkn&#252;pfung <select name="pref_mode"><option value="and" [% IF focus.mode == 'and' %]selected[% END %]>UND &#8211; alle W&#246;rter</option><option value="or" [% IF focus.mode == 'or' %]selected[% END %]>ODER &#8211; mindestens ein Wort</option></select></label>
+ [% PROCESS help id='mode' label='Wortverkn&#252;pfung' content='UND verlangt alle Suchw&#246;rter in aktivierten Feldern. ODER verlangt mindestens eines. Bei Titel-/Albumsuchen erf&#252;llt ein &#196;hnlichkeitsbonus allein die UND-Bedingung nicht. Die separate tolerante Namenssuche akzeptiert passende Varianten, Initialen und Tippfehler; die Genresuche verlangt alle Suchw&#246;rter.' %]</p>
+ <fieldset><legend>Suchfelder</legend><div class="sf-fields">
+ [% fields = [ ['title','Songtitel','Auch Werktitel bei Werkabfragen.'], ['album','Albumname','In der Album- und Titelsuche. Enthaltene Songtitel machen ein Album nicht zum Treffer.'], ['artist','Interpreten / Mitwirkende','In der Interpreten-, Album-, Titel- und Werksuche.'], ['playlist','Playlistname','Nur der Name, keine Inhalte der Playlist. Playlists k&#246;nnen clientseitig weiterhin alphabetisch erscheinen.'], ['genre','Genre in Titelsuche','Zusatzfeld f&#252;r Titel. Die separate Genresuche wird im Abschnitt Genresuche der Clients konfiguriert.'], ['lyrics','Lyrics','Liedtexte bei Titeln und zugeh&#246;rigen Alben. Kann die Suche verlangsamen. Vollst&#228;ndige Texte werden nicht in der Vorschau angezeigt.'], ['comment','Kommentare','Kommentare bei Titeln und zugeh&#246;rigen Alben. Kann die Suche verlangsamen.'] ] %]
+ [% FOREACH field IN fields %]<div class="sf-field"><label><input type="checkbox" name="pref_[% field.0 %]" value="1" [% IF focus.${field.0} %]checked[% END %]> [% field.1 %]</label>[% PROCESS help id=field.0 label=field.1 content=field.2 %]</div>[% END %]
+ </div></fieldset>
+ <fieldset><legend>Namenssuche</legend>
+ <p><label><input type="checkbox" name="pref_name_fuzzy" value="1" [% IF focus.name_fuzzy %]checked[% END %]> Tolerante Namenssuche</label>
+ [% PROCESS help id='name-fuzzy' label='Namenssuche' content='Findet neue Interpreten-/Mitwirkendentreffer bei Tippfehlern und Initialen, z. B. f. Chonpin. Gilt f&#252;r die Interpreten-Kategorie und gezielte Interpretenabfragen; nicht f&#252;r Titel- oder Albumfelder. Gro&#223;schreibung ist gleichwertig. Ein Buchstabenfehler ab vier Zeichen: 60 %, Wortanfang: 80 %, Initiale: 25 %. Eine Initiale allein erweitert die Suche nicht. UND/ODER gilt weiterhin. Ben&#246;tigt die aktive Volltext-Anbindung und das Suchfeld Interpreten.' %]</p>
+ <details><summary>Personenspezifische Varianten bearbeiten</summary>
+ <p><label for="sf-name-aliases">Vorhandener Name | Nachname (optional) | Varianten, getrennt durch Semikolon</label>
+ [% PROCESS help id='name-aliases' label='Namensvarianten' content='Eine Personenzuordnung pro Zeile. Beispiel: Fryderyk Chopin | Chopin | Fr&#233;d&#233;ric Chopin; Frederik Chopin. Zielnamen m&#252;ssen zur Bibliothek passen; ohne passende Person entstehen keine Treffer. Der Nachname muss in jedem angegebenen Namen enthalten sein. Leeres Nachnamenfeld f&#252;r Gruppen/K&#252;nstlernamen. Nur explizit zugeordnete Nachnamen erhalten 1.000 Wortpunkte, die &#252;brigen Namensteile dann 250. Ohne Zuordnung werden alle W&#246;rter neutral mit 1.000 bewertet. Vollst&#228;ndiger Name +100.000, jedes weitere passende Wort +2.000; Varianten erhalten insgesamt 90 %. Keine automatische Zusammenf&#252;hrung von Interpreten. Maximal 100 Zeilen und 12 Varianten je Zeile. # beginnt eine Kommentarzeile.' %]</p>
+ <textarea id="sf-name-aliases" name="pref_name_aliases" rows="7" maxlength="32000" style="width:95%;font-family:monospace;background:#fff;color:#202830">[% nameAliasesValue | html %]</textarea>
+ </details>
+ </fieldset>
+ <fieldset><legend>Genresuche der Clients</legend>
+ <p><label><input type="checkbox" name="pref_genre_fuzzy" value="1" [% IF focus.genre_fuzzy %]checked[% END %]> Tippfehler und alternative Schreibweisen erkennen</label>
+ [% PROCESS help id='genre-fuzzy' label='Tolerante Genresuche' content='Gilt f&#252;r gezielte Genre-Anfragen und die Genre-Kategorie der allgemeinen Suche. classic, klassic und klassik sind gleichwertig. Ein Buchstabenfehler wird ab vier Zeichen mit 60 % bewertet. Wortanf&#228;nge bleiben suchbar. Benutzt die Genreliste, keinen Volltextindex. Der Hauptschalter Search Focus muss eingeschaltet sein.' %]</p>
+ <p><label><input type="checkbox" name="pref_genre_hide_mixed" value="1" [% IF focus.genre_hide_mixed %]checked[% END %]> Mischgenres nur bei gezielter Suche anzeigen</label>
+ [% PROCESS help id='genre-mixed' label='Mischgenres' content='Eingeschaltet: Klassik findet kein Klassik-Jazz; classic jazz findet es gezielt. Ausgeschaltet: eigenst&#228;ndiges Genre 1.000 Punkte, erster Mischgenre-Bestandteil 800, weitere 400; gezielt gesuchtes Mischgenre 1.000. Tippfehler reduzieren die Wortbewertung auf 60 %. Mischgenres erkennen wir an Bindestrich, Plus, Schr&#228;gstrich oder &amp;. Auch Leerzeichen zwischen bekannten Genre-Bestandteilen (z. B. Classic Rock) gelten als Mischung; feste Liste, keine Bedeutungsanalyse. Mehrere separate Genre-Tags sind davon nicht betroffen. Direktes &#214;ffnen eines Genres bleibt unver&#228;ndert. Der Schalter wirkt bei aktivierter toleranter Genresuche.' %]</p>
+ [% IF focusState.genre_hook && focus.enabled && focus.genre_fuzzy %]<p>Genre-Anbindung aktiv.</p>[% ELSE %]<p>Genre-Erweiterung nicht aktiv; nach Installation LMS neu starten und Search Focus einschalten.</p>[% END %]
+ </fieldset>
+ <div class="sf-tools">
+ <span>Wort- und Feldpunkte [% PROCESS help id='points' label='Wort- und Feldpunkte' content='Deutsche Artikel und Possessivformen: 100 Wortpunkte. Andere W&#246;rter: 1.000, bei gro&#223;em Anfangsbuchstaben in der Eingabe 1.200. Artikel und Possessivformen bleiben bei 100. Feste Wortlisten, keine grammatische Analyse.<br><br>Feldpunkte pro Wort: Titel, Album, Interpret und Playlist 100; Genre 20; Lyrics 5; Kommentare 3. Nur das st&#228;rkste Feld z&#228;hlt. Jedes weitere regul&#228;r passende Wort: +2.000. Vollst&#228;ndiger exakter Name/Titel: +100.000.' %]</span>
+ <span>&#196;hnlichkeit [% PROCESS help id='similarity' label='&#196;hnlichkeit' content='Ein noch fehlendes Suchwort erh&#228;lt 60 % seiner Wortpunkte bei genau einer Einf&#252;gung, L&#246;schung, Ersetzung oder benachbarten Buchstabenvertauschung. Beide W&#246;rter m&#252;ssen mindestens vier Zeichen lang sein. Beispiel: meine &#8776; deine = +60.<br><br>Nur Rangfolge bereits gefundener Treffer; keine neuen Treffer bei ausschlie&#223;lichen Tippfehlern. Keine Doppelz&#228;hlung, keine weiteren Feld- oder Mehrwortpunkte. Keine Bedeutungsanalyse oder &#220;bersetzung.' %]</span>
+ <span>Suchregeln [% PROCESS help id='rules' label='Suchregeln' content='Wortanf&#228;nge werden unabh&#228;ngig von Gro&#223;schreibung und Akzenten erkannt. Satzzeichen, Minus und Anf&#252;hrungszeichen sind Trenner, keine Operatoren. Maximal 12 W&#246;rter und 256 Zeichen. Dateipfade, technische Daten und customsearch-Felder werden nicht durchsucht.' %]</span>
+ </div>
+ <p><button type="submit" name="resetDefaults" value="1">Standardwerte wiederherstellen</button></p>
+</div>
+<div class="settingGroup">
+ <h3>Testsuche [% PROCESS help id='test' label='Testsuche' content='Speichert die Einstellungen und zeigt bis zu 30 Treffer je Kategorie. Die Genre-Vorschau zeigt immer die neue Bewertungslogik, auch wenn ihre Client-Anbindung ausgeschaltet ist. Ohne Client-/Bibliotheksfilter; normale LMS-Suchen behalten ihre Filter. Die Testsuche kann einen vorhandenen Index auch ohne aktive Client-Anbindung lesen. Wiederholungen werden bis zu f&#252;nf Sekunden zwischengespeichert.' %]</h3>
+ <p><input class="sf-query" aria-label="Suchbegriff f&#252;r die Testsuche" type="text" name="testQuery" maxlength="256" value="[% testQuery | html %]"> <button type="submit" name="testSearch" value="1">Speichern und testen</button></p>
+ [% IF testError %]<div class="sf-warning" role="alert">[% testError | html %]</div>[% END %]
+ [% FOREACH group IN testGroups %]
+ <h4>[% group.name | html %] &#8211; [% group.total %] Treffer <small>([% group.ms %] ms, [% group.candidates %] Kandidaten)</small></h4>
+ <table class="sf-results"><thead><tr><th>Name</th><th>Begr&#252;ndung</th><th>Punkte</th></tr></thead><tbody>
+ [% FOREACH row IN group.rows %]<tr><td>[% row.label | html %]</td><td>[% row.reason | html %]</td><td>[% row.score %]</td></tr>[% END %]
+ </tbody></table>
+ [% END %]
+</div>
+</div>
