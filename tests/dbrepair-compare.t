@@ -1,0 +1,52 @@
+use strict;
+use warnings;
+use Test::More;
+use File::Temp qw(tempdir);
+use DBI;
+use lib '.';
+use Plugins::DBRepair::Compare;
+my $dir=tempdir(CLEANUP=>1);
+sub make_db {
+    my($name,$rows,$library)=@_;
+    my $path="$dir/$name.db";
+    my $db=DBI->connect("dbi:SQLite:dbname=$path",'','',{RaiseError=>1});
+    $db->do('CREATE TABLE tracks(id INTEGER PRIMARY KEY,url TEXT)');
+    $db->do('CREATE TABLE albums(id INTEGER PRIMARY KEY)');
+    $db->do('CREATE TABLE library_track(library TEXT,track INTEGER)');
+    $db->do('CREATE INDEX track_url ON tracks(url)');
+    for my $row (@$rows) {$db->do('INSERT INTO tracks VALUES(?,?)',undef,@$row);}
+    $db->do('INSERT INTO albums VALUES(1)');
+    $db->do('INSERT INTO library_track VALUES(?,?)',undef,$library,$rows->[0][0]);
+    $db->disconnect;return $path;
+}
+my $old=make_db('old',[[1,'file:///same.flac'],[2,'file:///removed.flac']],'music');
+my $new=make_db('new',[[91,'file:///same.flac'],[92,'file:///added.flac']],'audio');
+sub bytes {open my $f,'<:raw',$_[0] or die $!;local $/;return <$f>}
+my ($oldBytes,$newBytes)=(bytes($old),bytes($new));
+my $r=Plugins::DBRepair::Compare::run($new,$old,'manual',{check_id=>'test-compare'});
+is($r->{state},'ok','Healthy comparison completes');
+is_deeply([map {$_->{state}} @{$r->{checks}}],['ok','ok'],'Both integrity results retained');
+is_deeply($r->{differences}{added_urls},['file:///added.flac'],'Added URL reported');
+is_deeply($r->{differences}{removed_urls},['file:///removed.flac'],'Removed URL reported');
+is($r->{differences}{changed_memberships}[0]{url},'file:///same.flac','Membership matches by URL despite changed IDs');
+is_deeply($r->{differences}{changed_memberships}[0]{backup},['music'],'Old membership retained');
+is_deeply($r->{differences}{changed_memberships}[0]{current},['audio'],'New membership retained');
+is($r->{counts}{current}{tracks},2,'Track count');
+is($r->{counts}{backup}{albums},1,'Album count');
+is($r->{counts}{current}{library_track},1,'Membership count');
+ok(!$r->{schema}{changed},'Identical schema recognized');
+is(bytes($old),$oldBytes,'Backup bytes unchanged');is(bytes($new),$newBytes,'Live test database unchanged');
+my $db=DBI->connect("dbi:SQLite:dbname=$new",'','',{RaiseError=>1});
+$db->do('ALTER TABLE tracks ADD COLUMN title TEXT');
+$db->do("INSERT INTO tracks(id,url) VALUES(93,'file:///same.flac')");$db->disconnect;
+$r=Plugins::DBRepair::Compare::run($new,$old,'manual',{});
+ok($r->{schema}{changed},'Column difference detected');
+is_deeply($r->{differences}{ambiguous_common_urls},['file:///same.flac'],'Duplicates are explicit, not guessed');
+is_deeply($r->{differences}{changed_memberships},[],'Ambiguous memberships not falsely matched');
+open my $f,'>:raw',"$dir/broken.db";print {$f} 'broken';close $f;
+$r=Plugins::DBRepair::Compare::run($new,"$dir/broken.db",'manual',{});
+is($r->{state},'error','Unreadable backup makes comparison incomplete');
+ok(!$r->{output_complete},'Incomplete comparison flagged');
+is($r->{checks}[0]{state},'ok','Healthy side still preserved in failed comparison');
+ok(!exists $r->{differences},'Failed backup never masquerades as all tracks added');
+done_testing;

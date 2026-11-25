@@ -2,6 +2,7 @@
 import argparse
 import copy
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -70,13 +71,13 @@ def build(repository):
         attrs = {"name": name, "version": version,
                  "minTarget": target.findtext("minVersion"),
                  "maxTarget": target.findtext("maxVersion")}
-        if name == "LyricTranslator":
+        if name in {"LyricTranslator", "DBRepair"}:
             attrs["target"] = "windows"
         entry = ET.SubElement(plugins, "plugin", attrs)
         for child in extension:
             if child.tag in {"title", "desc", "creator"}:
                 entry.append(copy.deepcopy(child))
-        ET.SubElement(entry, "category").text = "radio" if name == "RadioStations" else "information"
+        ET.SubElement(entry, "category").text = extension.findtext("category") or ("radio" if name == "RadioStations" else "information")
         ET.SubElement(entry, "link").text = f"https://github.com/{repository}"
         ET.SubElement(entry, "url").text = f"https://github.com/{repository}/releases/download/{tag}/{archive.name}"
         ET.SubElement(entry, "sha").text = hashlib.sha1(archive.read_bytes()).hexdigest()
@@ -117,7 +118,15 @@ def publish(repository, packages, index_path):
             with urllib.request.urlopen(request, timeout=120) as response:
                 existing = response.read()
             if existing != archive.read_bytes():
-                raise ValueError(f"{tag} already exists with different content. Increase install.xml version.")
+                preserve_released_archive(existing, archive)
+                # Documentation-only main updates belong to a future version.
+                # Keep the immutable published bytes and their actual checksum.
+                tree = ET.parse(index_path)
+                name = tag.rsplit("-v", 1)[0]
+                for entry in tree.findall("plugins/plugin"):
+                    if entry.get("name") == name:
+                        entry.find("sha").text = hashlib.sha1(existing).hexdigest()
+                tree.write(index_path, encoding="utf-8", xml_declaration=True)
         else:
             upload(release, archive)
         if release["draft"]:
@@ -136,6 +145,27 @@ def publish(repository, packages, index_path):
             api(f"{prefix}/releases/assets/{asset['id']}", "DELETE")
     upload(release, index_path)
     print(f"LMS URL: https://github.com/{repository}/releases/download/repository/repo.xml")
+
+
+def preserve_released_archive(existing, archive):
+    """Allow deferred documentation, never silently replace released runtime code."""
+    def runtime_files(data):
+        with zipfile.ZipFile(io.BytesIO(data)) as zipped:
+            result = {}
+            for name in zipped.namelist():
+                if name.endswith("/"):
+                    continue
+                path = Path(name)
+                if path.suffix.lower() == ".md" or path.name == "README.txt":
+                    continue
+                content = zipped.read(name)
+                if path.suffix.lower() in {".py", ".pm", ".pl", ".ps1", ".js", ".html", ".css", ".xml", ".txt", ".json", ".svg"} or path.name in {"LICENSE", "NOTICE", "COPYING"}:
+                    content = content.replace(b"\r\n", b"\n")
+                result[name] = content
+            return result
+    if runtime_files(existing) != runtime_files(archive.read_bytes()):
+        raise ValueError(f"{archive.name} already exists with different runtime content. Increase install.xml version.")
+    archive.write_bytes(existing)
 
 
 if __name__ == "__main__":

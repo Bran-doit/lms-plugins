@@ -10,7 +10,7 @@ Unter **Einstellungen → Plugins → Zusätzliche Repositories** diese Adresse 
 https://github.com/Bran-doit/lms-plugins/releases/download/repository/repo.xml
 ```
 
-Radio Stations oder Lyric-Translator auswählen und den Installationshinweisen von LMS folgen.
+Radio Stations, Lyric-Translator oder DB Repair auswählen und den Installationshinweisen von LMS folgen.
 
 ### Radio Stations
 
@@ -19,6 +19,10 @@ Radiosender aus Radio Browser nach Land und Region durchsuchen. Eigene Radio-Fav
 ### Lyric-Translator
 
 Lokale Liedtextübersetzung in acht Sprachen mit automatischer Spracherkennung, Übersicht eingerichteter Sprachen und optionalem automatischem Modelldownload. Clients können auch Original-Lyrics abrufen. Benötigt **Windows x64**, **LMS 8.x/9.x** und das aktive Plugin **Music and Artist Information**. [Anleitung](Plugins/LyricTranslator/README.md) · [Client-API](Plugins/LyricTranslator/CLIENT-API.md) · [Änderungsverlauf](Plugins/LyricTranslator/CHANGELOG.md).
+
+### DB Repair
+
+Datenbankdiagnosen, Sicherung und Neuaufbau sowie Dienstneustart für **LMS als Windows-Dienst**. Der Windows-Helfer muss separat administrativ eingerichtet werden. [Anleitung](Plugins/DBRepair/README.md) · [Änderungsverlauf](Plugins/DBRepair/CHANGELOG.md).
 
 ## Updates veröffentlichen
 

@@ -13,6 +13,26 @@ spec.loader.exec_module(publisher)
 
 
 class PublicationTests(unittest.TestCase):
+    def test_existing_archive_preserved_for_deferred_docs_only(self):
+        import io
+        def package(code, readme):
+            target = io.BytesIO()
+            with zipfile.ZipFile(target, 'w') as archive:
+                archive.writestr('Example/Plugin.pm', code)
+                archive.writestr('Example/README.md', readme)
+            return target.getvalue()
+        original = package('original\n', 'old docs')
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'Example.zip'
+            path.write_bytes(package('original\r\n', 'new docs'))
+            publisher.preserve_released_archive(original, path)
+            self.assertEqual(path.read_bytes(), original)
+            changed = package('changed code', 'new docs')
+            path.write_bytes(changed)
+            with self.assertRaises(ValueError):
+                publisher.preserve_released_archive(original, path)
+            self.assertEqual(path.read_bytes(), changed)
+
     def test_release_notes_select_requested_version(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

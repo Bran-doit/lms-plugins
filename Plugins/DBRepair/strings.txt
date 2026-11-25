@@ -1,0 +1,6 @@
+PLUGIN_DBREPAIR
+	DE	DB Repair
+	EN	DB Repair
+PLUGIN_DBREPAIR_DESC
+	DE	Musikdatenbank mit Sicherung vollständig zurücksetzen und neu einlesen.
+	EN	Back up and reset the music database, then scan the library again.

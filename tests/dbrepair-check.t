@@ -1,0 +1,45 @@
+use strict;
+use warnings;
+use Test::More;
+use File::Temp qw(tempdir);
+use DBI;
+use lib '.';
+use Plugins::DBRepair::Check;
+my $dir=tempdir(CLEANUP=>1);
+my $path="$dir/library.db";
+my $dbh=DBI->connect("dbi:SQLite:dbname=$path",'','',{RaiseError=>1});
+$dbh->do('CREATE TABLE tracks(id INTEGER PRIMARY KEY, title TEXT)');
+$dbh->do('CREATE INDEX title_idx ON tracks(title)');
+$dbh->do("INSERT INTO tracks VALUES(1,'test')");
+$dbh->disconnect;
+sub bytes {open my $f,'<:raw',$_[0] or die $!;local $/;return <$f>}
+my $before=bytes($path);
+for my $mode(qw(quick_check integrity_check)) {
+    my $r=Plugins::DBRepair::Check::run($path,$mode,'before_scan');
+    is($r->{state},'ok',"$mode healthy database");
+    is_deeply($r->{messages},['ok'],'SQLite result preserved');
+    is($r->{label},'before_scan','Label recorded');
+    ok(defined $r->{seconds},'Duration recorded');
+    ok($r->{check_id} && $r->{started} && $r->{finished},'ID and start/end recorded');
+    is($r->{process}{diagnostic_pid},$$,'Diagnostic PID recorded');
+    is($r->{connection}{busy_timeout},3000,'Actual diagnostic timeout recorded');
+    is($r->{connection}{query_only},1,'Actual read-only setting recorded');
+    ok($r->{versions}{sqlite},'SQLite version recorded');
+    is($r->{command},"PRAGMA $mode(2147483647)",'Expanded result limit recorded');
+    ok($r->{output_complete},'Complete execution marked');
+}
+is(bytes($path),$before,'Database bytes unchanged');
+is(Plugins::DBRepair::Check::run("$dir/missing.db",'quick_check','')->{state},'error','Missing file is not healthy');
+ok(!-e "$dir/missing.db",'Missing database not created');
+open my $f,'>:raw',"$dir/corrupt.db" or die $!;print {$f} 'not a sqlite database';close $f;
+is(Plugins::DBRepair::Check::run("$dir/corrupt.db",'integrity_check','')->{state},'error','Corrupt header reported');
+my $bad=Plugins::DBRepair::Check::run("$dir/corrupt.db",'integrity_check','');
+is($bad->{error}{category},'corruption','SQLite corruption classified separately');
+ok($bad->{error}{code},'SQLite error code retained');
+like($bad->{error}{stack},qr/Check.*run/s,'Call chain retained');
+ok(!$bad->{output_complete},'Failed check is incomplete');
+$dbh=DBI->connect("dbi:SQLite:dbname=$dir/unrelated.db",'','',{RaiseError=>1});
+$dbh->do('CREATE TABLE other(id)');$dbh->disconnect;
+is(Plugins::DBRepair::Check::run("$dir/unrelated.db",'quick_check','')->{state},'error','Non-LMS database rejected');
+ok(!eval {Plugins::DBRepair::Check::run($path,'VACUUM','');1},'Only two read-only PRAGMAs accepted');
+done_testing;

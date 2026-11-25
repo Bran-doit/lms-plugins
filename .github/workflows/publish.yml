@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   publish:
+    needs: test-windows-helper
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,9 +25,20 @@ jobs:
       - name: Test Radio Stations
         run: |
           sudo apt-get update
-          sudo apt-get install -y libjson-xs-perl liburi-perl
+          sudo apt-get install -y libjson-xs-perl liburi-perl libdbd-sqlite3-perl
           prove tests/radiostations-*.t
+      - name: Test DB Repair diagnostics
+        run: prove tests/dbrepair-*.t
       - name: Build and publish plugins and repository index
         env:
           GH_TOKEN: ${{ github.token }}
         run: python scripts/publish.py --publish
+  test-windows-helper:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test DB Repair Windows helper with mocked services
+        shell: powershell
+        run: |
+          & ./tests/dbrepair-helper.ps1
+          & ./tests/dbrepair-worker.ps1
